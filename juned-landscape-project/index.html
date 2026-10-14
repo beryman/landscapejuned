@@ -1,0 +1,47 @@
+<!doctype html>
+<html lang="id">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>Juned Landscape Project</title>
+<meta name="description" content="Juned Landscape Project: manajemen proyek lanskap, katalog tanaman &amp; material, dan keuangan dalam satu aplikasi.">
+<meta name="theme-color" content="#244d3b">
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="icon" type="image/png" sizes="32x32" href="icons/favicon-32.png">
+<link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="Juned LP">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="format-detection" content="telephone=no">
+<link rel="stylesheet" href="shell.css">
+</head>
+<body>
+<div id="app">
+  <aside id="rail" aria-label="Navigasi utama">
+    <img class="brand" src="icons/logo-96.png" alt="Juned Landscape Project" width="46" height="46">
+    <div id="railNav" style="display:contents"></div>
+    <div class="grow"></div>
+    <button class="nb inst" id="railInstall" hidden title="Pasang aplikasi"></button>
+  </aside>
+
+  <main id="stage">
+    <section class="view on" id="v-home" aria-label="Beranda"><div class="page" id="homeBody"></div></section>
+    <section class="view" id="v-terpadu" aria-label="Terpadu"><div class="page" id="terpaduBody"></div></section>
+    <section class="view" id="v-setelan" aria-label="Pengaturan"><div class="page" id="setelanBody"></div></section>
+    <!-- iframe modul dibuat saat pertama dibuka: proyek, tanaman, keuangan -->
+  </main>
+
+  <nav id="tabbar" aria-label="Navigasi utama"></nav>
+</div>
+<div id="toast" role="status" aria-live="polite"></div>
+<div id="overlay"></div>
+
+<noscript><p style="padding:20px;color:#fff">Aplikasi ini membutuhkan JavaScript.</p></noscript>
+<script src="lib/kv.js"></script>
+<script src="lib/common.js"></script>
+<script src="shell-core.js"></script>
+<script src="shell-pages.js"></script>
+<script src="shell-bridge.js"></script>
+</body>
+</html>

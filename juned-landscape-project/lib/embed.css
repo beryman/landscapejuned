@@ -1,0 +1,38 @@
+/* Penyesuaian tampilan modul saat berjalan di dalam shell Juned Landscape Project.
+   Hanya aktif bila <html class="embed"> (ditambahkan otomatis oleh lib/common.js). */
+
+html.embed { -webkit-text-size-adjust: 100%; }
+
+/* Shell sudah mengurus area aman (notch / home indicator) */
+html.embed[data-mod="proyek"] { padding-top: 0; padding-bottom: 0; --bg: #f7f6ef; }
+html.embed[data-mod="proyek"] html, html.embed[data-mod="proyek"] { scroll-padding-top: 0; }
+html.embed[data-mod="keuangan"] header { padding-top: 0; }
+html.embed[data-mod="keuangan"] body { padding-bottom: 0; }
+
+/* ---------- Proyek ---------- */
+html.embed[data-mod="proyek"] header { padding: 10px 16px; background: #fff; position: sticky; top: 0; z-index: 20; }
+html.embed[data-mod="proyek"] header .m { display: none; }
+html.embed[data-mod="proyek"] header .sync { font-size: 12px; color: var(--mut); }
+html.embed[data-mod="proyek"] main { padding: 16px; }
+@media (max-width: 640px) {
+  html.embed[data-mod="proyek"] header { padding: 8px 12px; gap: 8px; }
+  html.embed[data-mod="proyek"] header .sync { display: none; }
+  html.embed[data-mod="proyek"] header #print { display: none; }
+  html.embed[data-mod="proyek"] main { padding: 12px; }
+  html.embed[data-mod="proyek"] .tabs { overflow-x: auto; flex-wrap: nowrap; -webkit-overflow-scrolling: touch; }
+  html.embed[data-mod="proyek"] .tabs button { flex: 0 0 auto; }
+}
+
+/* ---------- Keuangan ---------- */
+html.embed[data-mod="keuangan"] nav { padding: 10px 14px; }
+html.embed[data-mod="keuangan"] .logo { font-size: 18px; }
+html.embed[data-mod="keuangan"] .wrap { padding-bottom: 28px; }
+
+/* ---------- Tanaman ---------- */
+html.embed[data-mod="tanaman"] .app { min-height: 100%; }
+html.embed[data-mod="tanaman"] .sidebar { top: 0; }
+
+/* Cetak: sembunyikan elemen shell tidak relevan (modul dicetak sendiri) */
+@media print {
+  html.embed[data-mod="proyek"] header { position: static; }
+}
