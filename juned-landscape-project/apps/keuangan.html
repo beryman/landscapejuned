@@ -81,18 +81,24 @@ table{width:100%;border-collapse:collapse}th,td{padding:10px 7px;border-bottom:1
 
 <div id="receiptModal" class="modal"><div class="box">
 <h2>📷 Scan Nota</h2>
-<p class="small">Ambil foto nota atau pilih dari galeri. OCR membaca foto asli resolusi tinggi dengan beberapa proses peningkatan gambar. Hasil wajib diperiksa sebelum disimpan. Untuk OCR, koneksi internet diperlukan untuk memuat engine/language data.</p>
+<p class="small">Ambil foto nota atau pilih dari galeri. Nota dibaca oleh <b>Gemini</b> (AI Google): foto dikirim ke Google lewat internet, lalu toko, tanggal, item, dan total terisi otomatis. Hasil wajib diperiksa sebelum disimpan.</p>
+<details id="gemSet" style="margin:4px 0 8px"><summary class="small">⚙️ Pengaturan Gemini (kunci API &amp; model)</summary>
+<label>Kunci API Gemini<input id="gemKeyInp" type="password" autocomplete="off" autocapitalize="off" spellcheck="false" placeholder="AIza…"></label>
+<label>Model<input id="gemModelInp" list="gemModels" autocomplete="off" autocapitalize="off" spellcheck="false" placeholder="gemini-3.5-flash"></label><datalist id="gemModels"><option value="gemini-3.5-flash"><option value="gemini-3.5-flash-lite"><option value="gemini-3.1-flash-lite"></datalist>
+<div class="small">Buat kunci di <b>aistudio.google.com/apikey</b>. Kunci hanya disimpan di perangkat ini dan tidak ikut file cadangan. Disarankan membatasi kunci ke alamat aplikasi ini di Google. Rekomendasi model: <b>gemini-3.5-flash</b> (paling akurat) atau <b>gemini-3.5-flash-lite</b> (lebih cepat dan murah).</div>
+<div class="actions"><button type="button" class="secondary" onclick="saveGeminiSettings()">Simpan</button><button type="button" class="secondary" onclick="testGemini()">Tes koneksi</button></div>
+</details>
 <form onsubmit="saveReceipt(event)">
-<label>Foto Nota (kamera atau galeri)<input id="receiptFile" type="file" accept="image/*" onchange="handleReceiptImage(event)"></label><input id="receiptCam" type="file" accept="image/*" capture="environment" hidden onchange="handleReceiptImage(event)"><button type="button" class="secondary" onclick="document.getElementById('receiptCam').click()">📷 Ambil dengan Kamera</button><div id="receiptTip" class="small" style="margin-top:-4px">Tips: seluruh nota harus masuk frame, kamera fokus, cahaya merata, hindari bayangan/pantulan. Sistem mencoba orientasi 0°/90°/180°/270° dan OCR area header/item/total.</div>
+<label>Foto Nota (kamera atau galeri)<input id="receiptFile" type="file" accept="image/*" onchange="handleReceiptImage(event)"></label><input id="receiptCam" type="file" accept="image/*" capture="environment" hidden onchange="handleReceiptImage(event)"><button type="button" class="secondary" onclick="document.getElementById('receiptCam').click()">📷 Ambil dengan Kamera</button><div id="receiptTip" class="small" style="margin-top:-4px">Tips: seluruh nota harus masuk frame, kamera fokus, cahaya merata, hindari bayangan/pantulan. Gemini bisa membaca nota yang miring atau terbalik.</div>
 <img id="receiptPreview" style="display:none;max-width:100%;max-height:280px;border-radius:12px;margin:4px 0">
-<div id="ocrProgress" class="small">Belum ada foto.</div><div id="smartResult" class="small"></div><details id="ocrDetails" style="display:none;margin:6px 0"><summary class="small">Lihat teks OCR mentah</summary><textarea id="ocrRaw" readonly style="min-height:120px"></textarea></details>
+<div id="ocrProgress" class="small">Belum ada foto.</div><div id="smartResult" class="small"></div><details id="gemLogBox" style="display:none;margin:6px 0"><summary class="small">Detail teknis (untuk diagnosa)</summary><textarea id="gemLog" readonly style="min-height:110px"></textarea></details><details id="ocrDetails" style="display:none;margin:6px 0"><summary class="small">Lihat hasil mentah Gemini</summary><textarea id="ocrRaw" readonly style="min-height:120px"></textarea></details>
 <label>Nama Toko<input id="rStore" placeholder="Contoh: Indomaret"></label>
 <label>Total (Rp)<input id="rTotal" type="number" min="0" placeholder="Contoh: 125000"></label>
 <label>Tanggal<input id="rDate" type="date"></label>
 <label>Wallet<select id="rWallet"></select></label>
 <label>Kategori<select id="rCat"></select></label>
-<label>Subtotal (Rp)<input id="rSubtotal" type="number" min="0"></label><label>Diskon (Rp)<input id="rDiscount" type="number" min="0" value="0"></label><label>Pajak/PPN (Rp)<input id="rTax" type="number" min="0" value="0"></label><label>Item / Detail<textarea id="rItems" placeholder="Hasil OCR akan muncul di sini"></textarea></label>
-<div class="actions"><button type="button" class="secondary" onclick="runOCR()">🔎 Baca Ulang</button><button type="submit">✓ Simpan Nota</button><button type="button" class="secondary" onclick="closeM('receiptModal')">Tutup</button></div>
+<label>Subtotal (Rp)<input id="rSubtotal" type="number" min="0"></label><label>Diskon (Rp)<input id="rDiscount" type="number" min="0" value="0"></label><label>Pajak/PPN (Rp)<input id="rTax" type="number" min="0" value="0"></label><label>Item / Detail<textarea id="rItems" placeholder="Hasil pembacaan akan muncul di sini"></textarea></label>
+<div class="actions"><button type="button" class="secondary" onclick="runOCR()">🔎 Baca Ulang (Gemini)</button><button type="submit">✓ Simpan Nota</button><button type="button" class="secondary" onclick="closeM('receiptModal')">Tutup</button></div>
 </form></div></div>
 <div id="receiptViewer" class="modal" onclick="closeM('receiptViewer')"><div class="box" style="width:min(900px,100%);text-align:center" onclick="event.stopPropagation()"><img id="viewerImg" style="max-width:100%;max-height:75vh;border-radius:14px"><div class="actions" style="justify-content:center;margin-top:10px"><button type="button" class="secondary" onclick="closeM('receiptViewer')">Tutup</button></div></div></div>
 <div id="recurringModal" class="modal"><div class="box"><h2 id="recurringTitle">Jadwal Transaksi</h2><form onsubmit="saveRecurring(event)"><label>Jenis<select id="rrType"><option value="expense">Pengeluaran</option><option value="income">Pemasukan</option></select></label><label>Nominal<input id="rrAmount" type="number" min="1" required></label><label>Keterangan<input id="rrNote" required></label><label>Wallet<select id="rrWallet"></select></label><label>Kategori<select id="rrCat"></select></label><label>Tanggal berikutnya<input id="rrNext" type="date" required></label><label>Interval<select id="rrInterval"><option value="monthly">Setiap bulan</option><option value="weekly">Setiap minggu</option></select></label><div class="actions"><button type="submit">Simpan</button><button type="button" class="secondary" onclick="closeM('recurringModal')">Batal</button></div></form></div></div>
@@ -435,18 +441,6 @@ async function unlockPin(e){
  }
 }
 
-function normalizeOCRText(text){
- return String(text||'')
-  .replace(/\u00a0/g,' ')
-  .replace(/[|]/g,'I')
-  .replace(/[“”]/g,'"')
-  .replace(/[‘’]/g,"'")
-  .replace(/\r/g,'')
-  .split('\n')
-  .map(x=>x.replace(/[ \t]+/g,' ').trim())
-  .filter(Boolean)
-  .join('\n');
-}
 function parseIDR(v){
  let raw=String(v??'').trim().replace(/(?:rp|idr)\.?/gi,'').replace(/[^\d,.\s-]/g,'').replace(/\s+/g,'');
  if(!raw)return 0;
@@ -472,35 +466,6 @@ function parseIDR(v){
  }
  n=Number(raw);
  return Number.isFinite(n)?Math.round(n*sign):0;
-}
-function moneyTokens(line){
- const clean=String(line||'');
- const re=/(?:Rp\.?\s*)?(?:\d{1,3}(?:[.,\s]\d{3})+|\d{4,})(?:[.,]\d{1,2})?/gi;
- return (clean.match(re)||[]).filter(t=>{
-  const hasRp=/^rp/i.test(t),bare=t.replace(/^Rp\.?\s*/i,'');
-  // Buang deretan digit polos yang tampak seperti nomor telepon / nomor nota (>=8 digit atau diawali 0)
-  if(!hasRp&&/^\d+$/.test(bare)&&(bare.length>=8||/^0/.test(bare)))return false;
-  return true;
- }).map(parseIDR).filter(n=>Number.isFinite(n)&&n>0&&n<1e10);
-}
-function validISO(y,m,d){
- y=+y;m=+m;d=+d;if(y<2000||y>new Date().getFullYear()+1||m<1||m>12||d<1||d>31)return '';
- const t=new Date(y,m-1,d);if(t.getFullYear()!==y||t.getMonth()!==m-1||t.getDate()!==d)return '';
- return y+'-'+String(m).padStart(2,'0')+'-'+String(d).padStart(2,'0');
-}
-function guessDate(text){
- const lines=normalizeOCRText(text).split('\n'),cands=[];
- const months={jan:1,feb:2,mar:3,apr:4,mei:5,may:5,jun:6,jul:7,agu:8,aug:8,sep:9,okt:10,oct:10,nov:11,des:12,dec:12};
- lines.forEach((line,i)=>{
-  const bonus=(/tanggal|tgl|date|waktu/i.test(line)?5:0)-i*.01;let m;
-  const iso=/\b(20\d{2})[\/.-](\d{1,2})[\/.-](\d{1,2})\b/g;
-  while((m=iso.exec(line))){const v=validISO(m[1],m[2],m[3]);if(v)cands.push({v,score:10+bonus})}
-  const dmy=/\b(\d{1,2})[\/.-](\d{1,2})[\/.-](\d{4}|\d{2})\b/g;
-  while((m=dmy.exec(line))){let y=+m[3];if(y<100)y+=2000;const v=validISO(y,m[2],m[1]);if(v)cands.push({v,score:8+bonus})}
-  const mon=/\b(\d{1,2})\s*([A-Za-z]{3,9})\.?,?\s*(20\d{2})\b/g;
-  while((m=mon.exec(line))){const mm=months[m[2].toLowerCase().slice(0,3)];if(mm){const v=validISO(m[3],mm,m[1]);if(v)cands.push({v,score:9+bonus})}}
- });
- cands.sort((a,b)=>b.score-a.score);return cands[0]?.v||'';
 }
 function loadImageSource(file){
  return new Promise((resolve,reject)=>{
@@ -562,40 +527,10 @@ function compressImage(file,{max=1800,quality=.86,grayscale=false}={}){
   img.onerror=()=>{URL.revokeObjectURL(u);rej(new Error('Gambar tidak valid'))};img.src=u;
  }));
 }
-let ocrWorkerPromise=null,ocrWorkerLang='',ocrBusy=false;
-async function ensureTesseract(){
- if(window.Tesseract?.createWorker)return window.Tesseract;
- const urls=['https://cdn.jsdelivr.net/npm/tesseract.js@5.1.1/dist/tesseract.min.js','https://unpkg.com/tesseract.js@5.1.1/dist/tesseract.min.js'];
- for(const src of urls){
-  try{
-   await new Promise((resolve,reject)=>{const sc=document.createElement('script');sc.src=src;sc.async=true;sc.onload=resolve;sc.onerror=()=>reject(new Error('Gagal memuat OCR'));document.head.appendChild(sc)});
-   if(window.Tesseract?.createWorker)return window.Tesseract;
-  }catch(e){console.warn('OCR loader gagal',src,e)}
- }
- throw new Error('OCR library tidak dapat dimuat');
-}
-function langKey(lang){return Array.isArray(lang)?lang.join('+'):String(lang)}
-async function getOCRWorker(lang=['ind','eng'],logger=()=>{}){
- const T=await ensureTesseract(),key=langKey(lang);
- if(ocrWorkerPromise&&ocrWorkerLang!==key){
-  try{const old=await ocrWorkerPromise;await old.worker.terminate()}catch(_){}
-  ocrWorkerPromise=null;ocrWorkerLang='';
- }
- if(!ocrWorkerPromise){
-  ocrWorkerLang=key;
-  ocrWorkerPromise=(async()=>{
-   const options={logger,errorHandler:e=>console.error('Tesseract worker:',e),workerPath:'https://cdn.jsdelivr.net/npm/tesseract.js@5.1.1/dist/worker.min.js',corePath:'https://cdn.jsdelivr.net/npm/tesseract.js-core@5.1.1',langPath:'https://tessdata.projectnaptha.com/4.0.0',workerBlobURL:true,cacheMethod:'write'};
-   try{return {worker:await T.createWorker(lang,1,options),lang}}
-   catch(first){console.warn('ind+eng OCR gagal, fallback ke eng',first);return {worker:await T.createWorker('eng',1,options),lang:['eng']}}
-  })();
- }
- try{return await ocrWorkerPromise}catch(e){ocrWorkerPromise=null;ocrWorkerLang='';throw e}
-}
-let receiptBlob=null,receiptOriginalFile=null,activeReceiptId=null,activeReceiptTxId=null;
 function resetReceiptForm(){
  activeReceiptId=null;activeReceiptTxId=null;receiptBlob=null;receiptOriginalFile=null;
  rStore.value='';rTotal.value='';rDate.value=today();rSubtotal.value='';rDiscount.value='0';rTax.value='0';rItems.value='';smartResult.textContent='';ocrProgress.textContent='Belum ada foto.';receiptPreview.style.display='none';receiptFile.value='';
- if(ocrDetails)ocrDetails.style.display='none';if(ocrRaw)ocrRaw.value='';
+ if(ocrDetails)ocrDetails.style.display='none';if(ocrRaw)ocrRaw.value='';loadGeminiSettings();
 }
 async function openReceipt(id=null){
  try{
@@ -606,7 +541,7 @@ async function openReceipt(id=null){
    activeReceiptId=r.id;activeReceiptTxId=tx?.id||null;receiptBlob=r.blob;receiptOriginalFile=r.blob;
    rStore.value=r.store||'';rTotal.value=r.total||'';rDate.value=r.date||today();rSubtotal.value=r.subtotal||'';rDiscount.value=r.discount||0;rTax.value=r.tax||0;rItems.value=r.items||'';
    const u=URL.createObjectURL(receiptBlob);receiptPreview.src=u;receiptPreview.onload=()=>URL.revokeObjectURL(u);receiptPreview.style.display='block';
-   if(r.ocrText){ocrDetails.style.display='block';ocrRaw.value=r.ocrText;smartResult.textContent='Teks OCR tersimpan. Baca ulang bila diperlukan.'}
+   if(r.ocrText){ocrDetails.style.display='block';ocrRaw.value=r.ocrText;smartResult.textContent='Hasil bacaan tersimpan. Baca ulang bila diperlukan.'}
   }
   rWallet.innerHTML=wallet.innerHTML;rCat.innerHTML=cat.innerHTML;if(id&&tx){rWallet.value=tx.wallet;rCat.value=tx.category||'other'}
   document.getElementById('receiptModal').classList.add('show');
@@ -622,174 +557,127 @@ async function handleReceiptImage(e){
   await runOCR();
  }catch(err){console.error(err);receiptOriginalFile=null;receiptBlob=null;showToast('Gagal memproses foto nota');ocrProgress.textContent='Foto tidak dapat diproses.'}
 }
-function fixMoneyToken(tok){
- const m=tok.match(/^((?:Rp\.?\s*)?)(.*)$/i),head=m[1],body=m[2];
- if(!/\d/.test(body))return tok;
- return head+body.replace(/[Oo]/g,'0').replace(/[Il]/g,'1').replace(/S/g,'5').replace(/B/g,'8');
+
+let ocrRunId=0,ocrBusy=false,ocrRerun=false;
+function getGemKey(){try{return (localStorage.getItem('jlp_gemini_key')||'').trim()}catch(e){return ''}}
+function getGemModel(){try{return (localStorage.getItem('jlp_gemini_model')||'').trim()||'gemini-3.5-flash'}catch(e){return 'gemini-3.5-flash'}}
+function loadGeminiSettings(){const k=getGemKey();gemKeyInp.value=k;gemModelInp.value=getGemModel();document.getElementById('gemSet').open=!k}
+function saveGeminiSettings(quiet){
+ const k=gemKeyInp.value.trim(),m=gemModelInp.value.trim()||'gemini-3.5-flash';
+ try{if(k)localStorage.setItem('jlp_gemini_key',k);else localStorage.removeItem('jlp_gemini_key');localStorage.setItem('jlp_gemini_model',m)}catch(e){showToast('Browser menolak menyimpan pengaturan');return false}
+ if(!quiet)showToast(k?'Pengaturan Gemini tersimpan':'Kunci dihapus');return true;
 }
-function numericRepair(text){
- // Hanya memperbaiki token berbentuk nominal ribuan (mis. "1O.OOO", "1S.000"); kata biasa tidak disentuh.
- return String(text||'').split('\n').map(line=>{
-  if(!/\d/.test(line))return line;
-  return line.replace(/(^|[^A-Za-z0-9])((?:Rp\.?\s*)?[0-9OoIlSB]{1,3}(?:[.,][0-9OoIlSB]{3})+)(?![A-Za-z0-9])/g,(m,pre,tok)=>pre+fixMoneyToken(tok));
- }).join('\n');
+const GEM_FALLBACKS=['gemini-3.5-flash','gemini-3.5-flash-lite','gemini-3.1-flash-lite'];
+function gemLogShow(lines){const box=document.getElementById('gemLogBox'),ta=document.getElementById('gemLog');if(!box||!ta)return;ta.value=lines.join('\n');box.style.display=lines.length?'block':'none'}
+function gemMsg(status,msg){
+ msg=String(msg||'').replace(/\s+/g,' ').trim();
+ if(status===400&&/api key/i.test(msg))return 'Kunci API tidak valid. Periksa kembali di Pengaturan Gemini.';
+ if(status===400&&/location|not supported in your/i.test(msg))return 'Wilayah/akun belum didukung Gemini: '+msg.slice(0,160);
+ if(status===401||status===403)return 'Kunci ditolak ('+status+'). Pastikan Gemini API aktif untuk kunci ini dan pembatasan kunci (HTTP referrer) mengizinkan alamat aplikasi ini.'+(msg?' Detail: '+msg.slice(0,140):'');
+ if(status===404)return 'Model tidak ditemukan atau belum tersedia untuk kunci ini.';
+ if(status===429)return 'Kuota Gemini habis atau kunci gratis tidak punya kuota untuk model ini. '+msg.slice(0,140);
+ if(status>=500)return 'Layanan Gemini sedang sibuk ('+status+').';
+ return (msg||('HTTP '+status)).slice(0,220);
 }
-async function recognizePass(worker,image,psm,logger,{whitelist='',psmMode=true}={} ,label='OCR pass'){
+async function gemFetch(model,key,body,viaQuery,timeoutMs){
+ const ctl=new AbortController(),t=setTimeout(()=>ctl.abort(),timeoutMs);
  try{
-  const params={preserve_interword_spaces:'1',user_defined_dpi:'300'};
-  if(psmMode)params.tessedit_pageseg_mode=String(psm);
-  params.tessedit_char_whitelist=whitelist||'';
-  await worker.setParameters(params);
-  const r=await worker.recognize(image,{rotateAuto:false});
-  const text=normalizeOCRText(r?.data?.text||'');
-  const confidence=Number(r?.data?.confidence||0);
-  return {text:normalizeOCRText(numericRepair(text)),confidence,label};
- }catch(e){logger({status:`${label} gagal`,progress:1,error:e});return {text:'',confidence:0,label,error:e}}
+  const url='https://generativelanguage.googleapis.com/v1beta/models/'+encodeURIComponent(model)+':generateContent'+(viaQuery?'?key='+encodeURIComponent(key):'');
+  const headers={'Content-Type':'application/json'};if(!viaQuery)headers['x-goog-api-key']=key;
+  const res=await fetch(url,{method:'POST',headers,body:JSON.stringify(body),signal:ctl.signal});
+  let j=null,raw='';try{raw=await res.text();j=JSON.parse(raw)}catch(_){}
+  return {res,j,raw};
+ }finally{clearTimeout(t)}
 }
-function receiptSignalScore(text,confidence){
- const t=String(text||'').toLowerCase(), lines=t.split('\n');
- let score=confidence*1.2;
- const patterns=[
-  [/nota\s+penjualan/,60],[/no\.?\s*nota|nomor\s+nota/,55],[/tanggal|tgl/,35],
-  [/total\s*(net|bayar|pembayaran)?|grand\s+total/,70],[/harga|qty|jumlah|satuan/,26],
-  [/kasir|customer|pelanggan|alamat|surabaya|indonesia/,10],[/rp\.?\s*\d|\b\d{1,3}[.,]\d{3}\b/,22],
-  [/\b20\d{2}[\/.-]\d{1,2}[\/.-]\d{1,2}\b|\b\d{1,2}[\/.-]\d{1,2}[\/.-]\d{2,4}\b/,38],
-  [/cv\.?\s+[a-z][a-z .'-]{4,}/,32]
- ];
- for(const [re,w] of patterns)if(re.test(t))score+=w;
- score+=Math.min(12,lines.filter(x=>/[A-Za-z]{2,}/.test(x)&&/\d/.test(x)).length*2);
- const noise=(t.match(/[^A-Za-z0-9\s.,:/()'&-]/g)||[]).length;
- score-=Math.min(30,noise*.4);
- return score;
-}
-function chooseOrientation(results){
- return results.slice().sort((a,b)=>b.signal-a.signal || b.confidence-a.confidence)[0]||null;
-}
-async function autoCropPaper(blob,{threshold=150,padding=.025,maxPixels=16000000}={}){
- const img=await loadImageSource(blob),w=img.naturalWidth,h=img.naturalHeight;
- const step=Math.max(1,Math.floor(Math.sqrt((w*h)/300000)));
- const c=document.createElement('canvas');c.width=Math.max(1,Math.ceil(w/step));c.height=Math.max(1,Math.ceil(h/step));
- const ctx=c.getContext('2d',{willReadFrequently:true});ctx.drawImage(img,0,0,c.width,c.height);const im=ctx.getImageData(0,0,c.width,c.height).data;
- let minX=c.width,minY=c.height,maxX=-1,maxY=-1,bright=0;
- for(let y=0;y<c.height;y++)for(let x=0;x<c.width;x++){
-  const i=(y*c.width+x)*4,v=.299*im[i]+.587*im[i+1]+.114*im[i+2];
-  if(v>=threshold){bright++;if(x<minX)minX=x;if(x>maxX)maxX=x;if(y<minY)minY=y;if(y>maxY)maxY=y;}
- }
- const occupancy=bright/(c.width*c.height);
- if(maxX<0||occupancy<.12||occupancy>.98)return blob;
- const px=Math.round((maxX-minX+1)*padding),py=Math.round((maxY-minY+1)*padding);
- minX=Math.max(0,minX-px);maxX=Math.min(c.width-1,maxX+px);minY=Math.max(0,minY-py);maxY=Math.min(c.height-1,maxY+py);
- const sx=Math.round(minX*step),sy=Math.round(minY*step),sw=Math.min(w-sx,Math.round((maxX-minX+1)*step)),sh=Math.min(h-sy,Math.round((maxY-minY+1)*step));
- if(sw*sh>maxPixels){return blob}
- const out=document.createElement('canvas');out.width=sw;out.height=sh;const ox=out.getContext('2d');ox.fillStyle='#fff';ox.fillRect(0,0,sw,sh);ox.drawImage(img,sx,sy,sw,sh,0,0,sw,sh);
- return new Promise((res,rej)=>out.toBlob(b=>b?res(b):rej(new Error('Gagal auto-crop nota')),'image/png'));
-}
-async function cropBlob(blob,{x=0,y=0,w=1,h=1,scale=1.3}={}){
- const img=await loadImageSource(blob);
- const sx=Math.max(0,Math.round(img.naturalWidth*x)),sy=Math.max(0,Math.round(img.naturalHeight*y));
- const sw=Math.max(1,Math.min(img.naturalWidth-sx,Math.round(img.naturalWidth*w)));
- const sh=Math.max(1,Math.min(img.naturalHeight-sy,Math.round(img.naturalHeight*h)));
- const c=document.createElement('canvas');c.width=Math.max(1,Math.round(sw*scale));c.height=Math.max(1,Math.round(sh*scale));
- const ctx=c.getContext('2d');ctx.fillStyle='#fff';ctx.fillRect(0,0,c.width,c.height);ctx.imageSmoothingEnabled=true;ctx.imageSmoothingQuality='high';ctx.drawImage(img,sx,sy,sw,sh,0,0,c.width,c.height);
- return new Promise((res,rej)=>c.toBlob(b=>b?res(b):rej(new Error('Gagal crop OCR')),'image/png'));
-}
-function mergeOCRTexts(results){
- const ordered=results.slice().sort((a,b)=>(b.signal||0)-(a.signal||0)||(b.confidence||0)-(a.confidence||0));
- const picked=[];const seen=new Set();
- for(const r of ordered){
-  for(const line of normalizeOCRText(r.text).split('\n')){
-   const key=line.toLowerCase().replace(/[^a-z0-9]/g,'');if(key.length<3||seen.has(key))continue;
-   seen.add(key);picked.push(line);
+// Memanggil Gemini dengan cadangan otomatis: model lain, tanpa skema, kunci lewat query.
+async function gemCall(parts,genConfig,timeoutMs){
+ const key=getGemKey();
+ if(!key){const e=new Error('NOKEY');e.noKey=true;throw e}
+ const first=getGemModel(),chain=[first,...GEM_FALLBACKS.filter(m=>m!==first)],log=[],T=timeoutMs||70000;
+ let lastMsg='';
+ for(let mi=0;mi<chain.length;mi++){
+  const model=chain[mi];let useSchema=true,viaQuery=false,modelDone=false;
+  for(let attempt=0;attempt<4&&!modelDone;attempt++){
+   const cfg={...(genConfig||{})};if(!useSchema)delete cfg.responseSchema;
+   let out;
+   try{out=await gemFetch(model,key,{contents:[{role:'user',parts}],generationConfig:cfg},viaQuery,T)}
+   catch(e){
+    const why=e&&e.name==='AbortError'?'waktu habis':(e&&e.message)||'jaringan';
+    log.push(model+(viaQuery?' [key di URL]':'')+' → gagal terhubung: '+why);
+    if(e&&e.name==='AbortError'){lastMsg='Waktu habis. Periksa internet lalu coba lagi.';modelDone=true;break}
+    if(!viaQuery){viaQuery=true;continue}
+    lastMsg='Tidak dapat menghubungi Gemini. Periksa koneksi internet, VPN/pemblokir iklan, atau pembatasan kunci.';modelDone=true;break;
+   }
+   const {res,j,raw}=out,emsg=j&&j.error&&j.error.message||'';
+   if(res.ok){
+    const cand=j&&j.candidates&&j.candidates[0];
+    const txt=((cand&&cand.content&&cand.content.parts)||[]).filter(p=>!p.thought).map(p=>p.text||'').join('').trim();
+    if(txt){log.push(model+' → OK');gemLogShow(log);try{if(model!==first)localStorage.setItem('jlp_gemini_model',model)}catch(_){}return {text:txt,model,switched:model!==first}}
+    const br=(j&&j.promptFeedback&&j.promptFeedback.blockReason)||(cand&&cand.finishReason)||'kosong';
+    log.push(model+' → HTTP 200 tanpa teks ('+br+')');lastMsg='Gemini tidak mengembalikan hasil ('+br+'). Coba foto ulang yang lebih jelas.';
+    if(attempt===0&&useSchema){useSchema=false;continue}
+    modelDone=true;break;
+   }
+   log.push(model+(useSchema?'':' [tanpa skema]')+' → HTTP '+res.status+(emsg?': '+emsg.slice(0,300):(raw?': '+raw.slice(0,200):'')));
+   lastMsg=gemMsg(res.status,emsg);
+   if(res.status===400&&/api key/i.test(emsg)){gemLogShow(log);throw new Error(lastMsg)}
+   if(res.status===400&&useSchema&&/schema|response_?schema|unknown name|invalid json payload|mime/i.test(emsg)){useSchema=false;continue}
+   if(res.status===400&&/inline_?data/i.test(emsg)){modelDone=true;break}
+   modelDone=true;  // 401/403/404/429/5xx → coba model berikutnya
   }
+  if(mi<chain.length-1)continue;
  }
- return picked.join('\n');
+ gemLogShow(log);
+ const e=new Error(lastMsg||'Pembacaan gagal');e.log=log;throw e;
 }
-function guessTotal(text){
- const lines=normalizeOCRText(text).split('\n'),scored=[];
- const skip=/subtotal|sub\s*total|discount|diskon|tax|pajak|ppn|change|kembali|cashier|kasir/i;
- const notMoney=/nota|invoice|\binv\b|telp|tlp|\bhp\b|\bwa\b|npwp|tgl|tanggal|\bjam\b|pukul|\bqty\b/i;
- for(const line of lines){
-  if(skip.test(line))continue;
-  const nums=moneyTokens(line);if(!nums.length)continue;
-  let score=0;
-  if(/grand\s*total|total\s*(bayar|pembayaran|tagihan)?|jumlah\s*bayar|amount\s*due|net\s*total/i.test(line))score=180;
-  else if(/\btotal\b|jumlah\s*(net|bayar)?/i.test(line))score=130;
-  else if(/bayar|payment|terima|diterima/i.test(line))score=85;
-  else{if(notMoney.test(line))continue;score=6}
-  nums.forEach(n=>scored.push({n,score}));
- }
- if(!scored.length)return 0;
- // Tanpa label: nominal terbesar dipilih (total >= harga satuan manapun).
- scored.sort((a,b)=>b.score-a.score||b.n-a.n);return scored[0].n;
+async function testGemini(){
+ if(!saveGeminiSettings(true))return;
+ const b=event&&event.target;if(b)b.disabled=true;
+ try{const r=await gemCall([{text:'Balas hanya dengan kata: OK'}],{},30000);showToast('Terhubung ✓ model '+r.model+(r.switched?' (model awal gagal, otomatis dipindah)':''));loadGeminiSettings();document.getElementById('gemSet').open=true}
+ catch(e){showToast(e.noKey?'Isi kunci API terlebih dahulu':e.message)}finally{if(b)b.disabled=false}
 }
-function guessStore(text){
- const lines=normalizeOCRText(text).split('\n'),bad=/(total|subtotal|diskon|discount|pajak|ppn|tax|tanggal|date|invoice|receipt|nota|cashier|kasir|telp|phone|www\.|http|alamat|address|jl\.|jalan|npwp)/i;
- let best='',bestScore=-Infinity;
- lines.slice(0,14).forEach((line,i)=>{if(line.length<3||line.length>90||bad.test(line)||!/[A-Za-z]/.test(line))return;let score=24-i*1.4;if(/\bcv\.?\s+/i.test(line))score+=35;if(/kencana|jaya|mart|store|toko|shop|indomaret|alfamart/i.test(line))score+=25;if(/^[A-Z0-9 &'.-]{4,}$/.test(line))score+=10;if(!/\d{3,}/.test(line))score+=7;if(/[A-Za-z]{3,}/.test(line))score+=5;if(score>bestScore){bestScore=score;best=line}});return best.slice(0,90)}
-function guessItems(text){
- const lines=normalizeOCRText(text).split('\n');return lines.map(x=>x.trim()).filter(x=>{if(x.length<3||!/[A-Za-z]/.test(x))return false;if(/(grand\s*total|total|subtotal|diskon|discount|pajak|ppn|tax|cash|change|kembali|invoice|tanggal|date|no\.?\s*nota|nota\s+penjualan|harga|qty|jumlah|kasir)/i.test(x))return false;return moneyTokens(x).length>0||/\b\d+(?:\.\d+)?\s*(kg|pcs|unit|lusin|box|botol|liter|l)\b/i.test(x)}).slice(0,20).join('\n')}
-let ocrRunId=0,ocrRerun=false;const OCR_ORIENT_OK=170;
+const GEM_SCHEMA={type:'OBJECT',properties:{store:{type:'STRING'},date:{type:'STRING'},total:{type:'NUMBER'},subtotal:{type:'NUMBER'},discount:{type:'NUMBER'},tax:{type:'NUMBER'},category:{type:'STRING'},items:{type:'ARRAY',items:{type:'OBJECT',properties:{name:{type:'STRING'},qty:{type:'NUMBER'},price:{type:'NUMBER'},total:{type:'NUMBER'}},required:['name']}},notes:{type:'STRING'}},required:['total']};
+function parseGemJSON(t){
+ t=String(t).trim().replace(/^```(?:json)?\s*/i,'').replace(/\s*```$/,'');
+ try{return JSON.parse(t)}catch(e){const a=t.indexOf('{'),z=t.lastIndexOf('}');if(a>=0&&z>a)return JSON.parse(t.slice(a,z+1));throw new Error('Format hasil Gemini tidak dapat dibaca')}
+}
 async function runOCR(){
- if(ocrBusy){ocrRerun=true;showToast('OCR masih berjalan. Foto dibaca ulang setelah selesai.');return}
- const source=receiptOriginalFile||receiptBlob;if(!source)return showToast('Pilih foto nota terlebih dahulu');
- ocrBusy=true;const runId=++ocrRunId,stale=()=>runId!==ocrRunId;let step='';
+ if(ocrBusy){ocrRerun=true;showToast('Pembacaan masih berjalan. Foto dibaca ulang setelah selesai.');return}
+ if(!receiptBlob){showToast('Pilih foto nota terlebih dahulu');return}
+ if(!getGemKey()){document.getElementById('gemSet').open=true;ocrProgress.textContent='Kunci API Gemini belum diisi.';smartResult.textContent='Buka “Pengaturan Gemini”, isi kunci API, tekan Simpan, lalu Baca Ulang.';gemKeyInp.focus();return}
+ ocrBusy=true;const runId=++ocrRunId,stale=()=>runId!==ocrRunId,model=getGemModel();
  const rerunBtn=document.querySelector('#receiptModal button[onclick="runOCR()"]');if(rerunBtn)rerunBtn.disabled=true;
- ocrProgress.textContent='Menganalisis orientasi dan meningkatkan kualitas foto…';smartResult.textContent='';
+ ocrProgress.textContent='Mengirim foto ke '+model+'…';smartResult.textContent='';gemLogShow([]);
  try{
-  const logger=m=>{if(!stale()&&m?.status&&typeof m.progress==='number')ocrProgress.textContent=`OCR${step?' · '+step:''}: ${m.status} ${Math.round(m.progress*100)}%`};
-  const worker=(await getOCRWorker(['ind','eng'],logger)).worker;
-  const sig=r=>receiptSignalScore(r.text,r.confidence);
-  // Fase 1: orientasi. Berhenti lebih awal bila 0° sudah jelas benar (hemat waktu & baterai).
-  const orientationResults=[];
-  for(const rot of [0,90,180,270]){
-   if(stale())return;step=`orientasi ${rot}°`;
-   const blob=await drawEnhanced(source,{max:2400,mode:'gray',upscale:1.2,rotate:rot});
-   const r=await recognizePass(worker,blob,6,logger,{},`Orientasi ${rot}°`);
-   const item={...r,rotation:rot,signal:sig(r)};orientationResults.push(item);
-   if(rot===0&&item.signal>=OCR_ORIENT_OK&&item.confidence>=55)break;
-  }
+  const b64=await new Promise((res,rej)=>{const r=new FileReader();r.onload=()=>res(String(r.result).split(',')[1]);r.onerror=()=>rej(r.error);r.readAsDataURL(receiptBlob)});
+  const cats=[...rCat.options].map(o=>o.value+' = '+o.textContent.trim()).join('; ');
+  const prompt='Kamu membaca foto nota/struk belanja (umumnya dari Indonesia). Ekstrak datanya dan kembalikan JSON sesuai skema.\n'+
+   'Aturan:\n- Semua angka dalam rupiah penuh tanpa pemisah (contoh 125000). Pada nota Indonesia titik/koma pemisah ribuan bukan desimal (mis. 12.500 = 12500).\n'+
+   '- total = jumlah akhir yang harus dibayar (grand total / total bayar), bukan tunai atau kembalian.\n- subtotal, discount, tax diisi 0 bila tidak ada.\n'+
+   '- date format YYYY-MM-DD (tahun 2 digit = 20xx). Kosongkan bila tidak terbaca.\n- store = nama toko/merchant.\n'+
+   '- items = setiap barang dengan name, qty, price (harga satuan), total (jumlah baris). Jangan mengarang barang.\n'+
+   '- category = pilih SATU id yang paling sesuai dari daftar ini: '+cats+'.\n- notes = catatan singkat bila ada bagian tidak terbaca. Foto mungkin miring atau terbalik; tetap baca.';
+  const gem=await gemCall([{text:prompt},{inline_data:{mime_type:receiptBlob.type||'image/jpeg',data:b64}}],{responseMimeType:'application/json',responseSchema:GEM_SCHEMA});
   if(stale())return;
-  const selected=chooseOrientation(orientationResults);if(!selected)throw new Error('Orientasi nota tidak ditemukan');
-  ocrProgress.textContent=`Orientasi terpilih ${selected.rotation}°. Menjalankan pembacaan detail…`;
-  // Fase 2: varian gambar halaman penuh pada orientasi terpilih.
-  const full=[{...selected}],regionRes=[];
-  for(const [mode,psms] of [['gray',[6,4]],['otsu',[6]],['color',[6]]]){
-   if(stale())return;
-   const blob=await drawEnhanced(source,{max:3300,mode,upscale:1.35,rotate:selected.rotation});
-   for(const psm of psms){step=`${mode} PSM${psm}`;const r=await recognizePass(worker,blob,psm,logger,{},`${mode} PSM${psm}`);full.push({...r,signal:sig(r),rotation:selected.rotation})}
-  }
-  // Fase 3: auto-crop kertas lalu OCR per area. (baseRot HARUS dibuat dulu sebelum dipakai.)
-  if(stale())return;step='auto-crop';
-  const baseRotFull=await drawEnhanced(source,{max:3400,mode:'gray',upscale:1.45,rotate:selected.rotation});
-  const baseRot=await autoCropPaper(baseRotFull,{threshold:145,padding:.035});
-  const croppedFull=await recognizePass(worker,baseRot,6,logger,{},'Auto-crop full');
-  full.push({...croppedFull,signal:sig(croppedFull)+20,rotation:selected.rotation});
-  const regions=[
-   {name:'Header',x:0,y:0,w:1,h:.34,psm:6,whitelist:''},
-   {name:'Items',x:0,y:.23,w:1,h:.54,psm:6,whitelist:''},
-   {name:'Total',x:0,y:.63,w:1,h:.37,psm:6,whitelist:'0123456789.,RpIDR '}
-  ];
-  for(const rg of regions){
-   if(stale())return;step=`area ${rg.name}`;
-   const crop=await cropBlob(baseRot,rg);const r=await recognizePass(worker,crop,rg.psm,logger,{whitelist:rg.whitelist},rg.name);
-   regionRes.push({...r,signal:sig(r)+12,rotation:selected.rotation});
-  }
-  if(stale())return;
-  const byScore=(a,b)=>b.signal-a.signal||b.confidence-a.confidence;
-  const bestFull=full.slice().sort(byScore)[0];
-  const merged=mergeOCRTexts([bestFull,...full.filter(x=>x!==bestFull&&x.signal>=bestFull.signal-40),...regionRes.filter(x=>x.signal>=bestFull.signal-60)]);
-  if(merged.length<8)throw new Error('Teks terlalu sedikit');
-  const text=merged,total=guessTotal(text),dateGuess=guessDate(text),store=guessStore(text);
-  const items=guessItems(bestFull.text)||guessItems(text);   // item dari satu pembacaan terbaik agar tidak dobel
-  if(store)rStore.value=store;if(total>0)rTotal.value=total;if(dateGuess)rDate.value=dateGuess;if(items)rItems.value=items;
-  ocrDetails.style.display='block';ocrRaw.value=text;
-  const fields=[store?'toko':'',total?'total':'',dateGuess?'tanggal':'',items?'item':''].filter(Boolean).join(', ');
-  const conf=Math.round(Math.max(0,Math.min(100,bestFull.confidence)));
-  smartResult.textContent=`OCR selesai · confidence ${conf}% · orientasi ${selected.rotation}°. ${text.length} karakter${fields?` · terdeteksi: ${fields}`:''}. Hasil digabung dari beberapa pembacaan, periksa sebelum menyimpan.`;
-  ocrProgress.textContent=conf<55?'OCR selesai — kualitas rendah. Coba foto lebih dekat dan cahaya lebih merata.':'OCR selesai.';
+  let j;try{j=parseGemJSON(gem.text)}catch(pe){gemLogShow(['Respons tidak dapat di-parse:',gem.text.slice(0,600)]);throw pe}
+  const N=v=>{const n=Number(v);return Number.isFinite(n)&&n>0?Math.round(n):0},fmt=n=>Number(n).toLocaleString('id-ID');
+  const items=(Array.isArray(j.items)?j.items:[]).filter(x=>x&&x.name);
+  let total=N(j.total);const subtotal=N(j.subtotal),discount=N(j.discount),tax=N(j.tax),sum=items.reduce((a,x)=>a+N(x.total||N(x.qty||1)*N(x.price)),0);
+  if(!total&&subtotal)total=Math.max(0,subtotal-discount+tax);
+  if(!total&&sum)total=sum;
+  const store=String(j.store||'').trim(),date=/^\d{4}-\d{2}-\d{2}$/.test(j.date||'')&&!isNaN(new Date(j.date))?j.date:'';
+  if(store)rStore.value=store;if(total)rTotal.value=total;if(date)rDate.value=date;
+  rSubtotal.value=subtotal||'';rDiscount.value=discount||0;rTax.value=tax||0;
+  if(items.length)rItems.value=items.map(x=>{const q=Number(x.qty)>0?Number(x.qty):1,p=N(x.price),t=N(x.total);return q+' × '+String(x.name).trim()+(p?' @ '+fmt(p):'')+(t?' = '+fmt(t):'')}).join('\n');
+  if(j.category&&[...rCat.options].some(o=>o.value===j.category))rCat.value=j.category;
+  ocrDetails.style.display='block';ocrRaw.value=JSON.stringify(j,null,2);
+  const got=[store?'toko':'',total?'total':'',date?'tanggal':'',items.length?items.length+' item':''].filter(Boolean).join(', ');
+  const base=subtotal||(total-tax+discount),warn=items.length&&sum&&base&&Math.abs(sum-base)>Math.max(500,base*.02)?' ⚠ Jumlah item ('+fmt(sum)+') tidak sama dengan subtotal/total, periksa baris item dan total.':'';
+  smartResult.textContent='Dibaca oleh '+gem.model+(gem.switched?' (model “'+model+'” gagal, otomatis dipindah)':'')+(got?' · terdeteksi: '+got:'')+'. '+(j.notes?String(j.notes).slice(0,160)+' ':'')+'Periksa sebelum menyimpan.'+warn;
+  ocrProgress.textContent=total?'Selesai.':'Selesai, tetapi total belum terbaca. Isi total secara manual atau foto ulang.';
  }catch(err){
-  console.error('OCR error',err);
-  if(!stale()){ocrProgress.textContent='OCR gagal. Data tetap dapat diisi manual.';smartResult.textContent=location.protocol==='file:'?'OCR di Safari paling stabil melalui localhost atau HTTPS dengan internet aktif.':'Pastikan internet aktif (engine OCR dimuat dari CDN), lalu foto ulang dengan seluruh nota terlihat, fokus tajam, dan cahaya merata.';showToast('OCR gagal — data manual tetap bisa disimpan')}
+  console.error('Gemini error',err);
+  if(!stale()){ocrProgress.textContent='Pembacaan gagal. Data tetap dapat diisi manual.';smartResult.textContent=err.noKey?'Kunci API Gemini belum diisi.':err.message+' (lihat “Detail teknis” di bawah)';showToast(err.noKey?'Isi kunci API Gemini dulu':'Gagal membaca nota: '+err.message)}
  }finally{ocrBusy=false;if(rerunBtn)rerunBtn.disabled=false;if(ocrRerun){ocrRerun=false;setTimeout(runOCR,50)}}
 }
 async function saveReceipt(e){

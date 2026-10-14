@@ -44,7 +44,7 @@ Uji lokal di komputer: klik dua kali `jalankan-lokal.command` (Mac) atau jalanka
 
 ## Catatan
 - Foto & dokumen kini disimpan di IndexedDB (bukan localStorage 5 MB), jadi jauh lebih lega. Dokumen proyek maks 4 MB per file.
-- Ekspor Excel di Proyek sekarang berjalan offline (SheetJS dibundel). OCR nota (Keuangan) memuat Tesseract dari internet pada pemakaian pertama, lalu di-cache.
+- **Baca nota memakai Gemini (Google AI).** Di Keuangan › Foto Nota buka *Pengaturan Gemini*, isi kunci API (gratis dari aistudio.google.com/apikey), lalu foto nota. Toko, tanggal, item, kategori, dan total terisi otomatis dan wajib Anda periksa. Model bawaan `gemini-3.5-flash`; bila gagal, aplikasi otomatis mencoba `gemini-3.5-flash-lite` lalu `gemini-3.1-flash-lite`, dan bagian *Detail teknis* menampilkan pesan error asli dari Google; nama model bisa diganti di pengaturan yang sama. Foto nota dikirim ke Google, jadi butuh internet; periksa ketentuan penggunaan data Google untuk jenis kunci yang Anda pakai. Kunci hanya tersimpan di perangkat dan tidak ikut file cadangan. Batasi kunci ke alamat aplikasi Anda di Google agar aman.
 - Taman Kerja versi aslinya punya sinkron tim di dalam Claude; di sini modul Proyek berjalan satu pengguna per perangkat. PlantBase tetap punya opsi cloud (Supabase) di pengaturannya bila Anda memakainya.
 - Pembaruan: naikkan `VERSION` di `sw.js` dan `APP_VERSION` di `shell-core.js` setiap mengubah file, lalu unggah ulang. Pengguna melihat tombol *Perbarui*.
 

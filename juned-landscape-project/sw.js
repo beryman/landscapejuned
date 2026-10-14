@@ -1,5 +1,5 @@
 /* Juned Landscape Project - service worker (offline + pembaruan terkontrol) */
-const VERSION = '1.0.0';
+const VERSION = '1.0.2';
 const CACHE = 'jlp-' + VERSION;
 const RUNTIME = 'jlp-runtime';
 const CORE = [

@@ -1,6 +1,6 @@
 /* Juned Landscape Project - shell: utilitas, penyimpanan, navigasi, iframe modul, PWA */
 'use strict';
-const APP_VERSION = '1.0.0';
+const APP_VERSION = '1.0.2';
 const $ = (s, r = document) => r.querySelector(s);
 const $$ = (s, r = document) => Array.from(r.querySelectorAll(s));
 const esc = s => String(s == null ? '' : s).replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
