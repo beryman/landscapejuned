@@ -198,3 +198,34 @@ a.syncpill{text-decoration:none}
 .lnk{border:0;background:none;padding:0;color:var(--g2);font-weight:700;text-decoration:underline;text-underline-offset:2px;min-height:0}
 .lnk:focus-visible{outline:2px solid var(--gold);outline-offset:2px}
 details.dd[style*="grid-column"]{background:var(--paper)}
+
+/* ---------- Layar login ---------- */
+#login{position:fixed;inset:0;z-index:90;display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);background:var(--g1);color:#fff;overflow-y:auto}
+.lg-brand{display:flex;flex-direction:column;justify-content:flex-end;padding:calc(40px + var(--sat)) 56px 56px calc(56px + var(--sal))}
+.lg-brand img{border-radius:12px;margin-bottom:20px}
+.lg-name{margin:0;font-size:clamp(30px,3.6vw,46px);line-height:1.1;font-weight:800;max-width:12em;overflow-wrap:break-word;min-width:0}
+.lg-line{margin:14px 0 0;font-size:17px;max-width:26em;color:var(--mint)}
+.lg-side{background:var(--cream);color:var(--ink);display:flex;align-items:center;justify-content:center;padding:calc(32px + var(--sat)) calc(24px + var(--sar)) calc(32px + var(--sab)) 24px}
+.lg-form{width:100%;max-width:380px}
+.lg-form h1{margin:0;font-size:28px;font-weight:800}
+.lg-sub{margin:6px 0 22px;color:var(--mut)}
+.lg-form input{width:100%;min-height:46px;font-size:16px;background:var(--paper);border:1px solid var(--line);border-radius:10px;padding:9px 12px}
+.lg-pass{position:relative;display:block}
+.lg-pass input{padding-right:112px}
+.lg-pass .lnk{position:absolute;right:10px;top:50%;transform:translateY(-50%);margin:0}
+.lg-msg{min-height:22px;margin:2px 0 8px;font-size:14px;color:var(--mut)}
+.lg-msg.err{color:var(--red);font-weight:600}
+.lg-go{width:100%;min-height:48px;font-size:16px}
+.lg-alt{margin:16px 0 0;text-align:center}
+.lg-skip{margin:22px 0 0;padding-top:16px;border-top:1px solid var(--line);text-align:center;font-size:13px;color:var(--mut)}
+.lg-form .lnk{background:none;border:0;padding:4px;color:var(--g2);font-weight:700;text-decoration:underline}
+.lg-form .lnk:focus-visible{outline:2px solid var(--gold);outline-offset:2px}
+@media (max-width:760px){
+  #login{display:block;background:var(--cream)}
+  .lg-brand{background:var(--g1);padding:calc(18px + var(--sat)) 20px 18px calc(20px + var(--sal));flex-direction:row;flex-wrap:wrap;align-items:center;justify-content:flex-start;gap:12px}
+  .lg-brand img{width:40px;height:40px;margin:0}
+  .lg-name{font-size:20px}
+  .lg-line{display:none}
+  .lg-side{display:block;padding:24px 20px calc(24px + var(--sab))}
+  .lg-form{margin:0 auto}
+}

@@ -7,7 +7,7 @@ URL dan kunci publik proyek Supabase sudah ada di `config.js`, jadi perangkat ba
 
 Ingat dua hal karena repo ini **publik**:
 - Kunci di `config.js` adalah kunci *publik* (`sb_publishable_…`). Data Anda dilindungi aturan RLS per akun, bukan oleh kerahasiaan kunci itu. **Jangan pernah** menaruh kunci `service_role` atau `secret` di sana.
-- Siapa pun yang tahu alamat aplikasi bisa mencoba mendaftar akun di proyek Supabase Anda. Setelah semua akun Anda dibuat, matikan pendaftaran: Supabase › **Authentication › Sign In / Providers** › matikan **Allow new users to sign up**. Tombol *Daftar akun baru* di aplikasi lalu tidak dipakai lagi.
+- Siapa pun yang tahu alamat aplikasi bisa mencoba mendaftar akun di proyek Supabase Anda. Setelah semua akun Anda dibuat, matikan pendaftaran: Supabase › **Authentication › Sign In / Providers** › matikan **Allow new users to sign up**. Tombol *Buat akun* di layar login lalu menampilkan pesan bahwa pendaftaran ditutup.
 
 Kode koneksi manual (di bawah) tetap diutamakan bila ada, dan *Ubah koneksi* kembali ke bawaan.
 
@@ -19,17 +19,21 @@ Kode koneksi manual (di bawah) tetap diutamakan bila ada, dan *Ubah koneksi* kem
    **Jangan pernah memakai kunci `service_role` / secret.** Itu kunci rahasia.
 
 ## B. Perangkat pertama
-1. Buka aplikasi › **Pengaturan › Sinkron antar perangkat**.
-2. Tempel **Project URL** dan **kunci anon**, klik **Simpan koneksi**.
-3. Isi email dan kata sandi (min. 6 karakter), klik **Daftar akun baru**. Data perangkat ini langsung diunggah.
-4. Klik **Salin kode koneksi** (atau **Salin tautan penyiapan**) dan kirim ke diri sendiri (WhatsApp/Catatan).
+1. Buka aplikasi. Layar login tampil di awal.
+2. Tekan **Buat akun**, isi email dan kata sandi (min. 6 karakter). Data perangkat ini langsung diunggah.
 
 ## C. Perangkat lain (iPhone, Android, Mac, iPad)
-1. Pasang dan buka aplikasi di perangkat itu › Pengaturan › Sinkron.
-2. Tempel **kode koneksi** › **Terapkan kode** (atau buka tautan penyiapan).
-3. Masukkan email dan kata sandi yang **sama**, klik **Masuk**. Seluruh data turun otomatis.
+1. Pasang dan buka aplikasi di perangkat itu.
+2. Di layar login, isi email dan kata sandi yang **sama**, tekan **Masuk**. Seluruh data turun otomatis. Bila fotonya banyak, tekan *Lanjut, sinkron di latar*.
 
 > **iPhone/iPad:** aplikasi di layar utama dan Safari punya penyimpanan terpisah. Lakukan langkah C di **aplikasi layar utama** (bukan di tab Safari).
+
+## Cara kerja layar login (versi 1.12.0)
+- Setelah masuk, aplikasi tidak bertanya lagi dan tetap bisa dibuka saat offline.
+- *Pakai tanpa login* membuat data hanya tersimpan di perangkat itu. Masuk kapan saja dari **Pengaturan › Lanjutan › Sinkron antar perangkat**.
+- Bila sesi benar-benar berakhir, layar login muncul lagi. Gangguan internet atau server tidak mengeluarkan Anda, dan data di perangkat tidak dihapus.
+- Bila perangkat terakhir dipakai akun lain, aplikasi bertanya dulu sebelum menggabungkan data perangkat ke akun yang baru masuk.
+- Belum ada fitur lupa kata sandi di aplikasi. Atur ulang lewat Supabase › **Authentication › Users**.
 
 ## Cara kerjanya
 - Sinkron otomatis: beberapa detik setelah data berubah, saat aplikasi dibuka kembali, saat kembali online, dan tiap 45 detik. Ada tombol *Sinkronkan sekarang*.

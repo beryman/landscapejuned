@@ -80,9 +80,11 @@ function connCode() { return btoa(unescape(encodeURIComponent(JSON.stringify({ u
 function parseConnCode(c) { try { const o = JSON.parse(decodeURIComponent(escape(atob(String(c).trim())))); const u = normUrl(o.u); return u && o.k ? { url: u, anon: String(o.k).trim() } : null; } catch (_) { return null; } }
 
 async function authReq(path, body) {
-  const res = await fetch(sync.cfg.url + path, { method: 'POST', headers: { 'Content-Type': 'application/json', apikey: sync.cfg.anon }, body: JSON.stringify(body) });
+  let res;
+  try { res = await fetch(sync.cfg.url + path, { method: 'POST', headers: { 'Content-Type': 'application/json', apikey: sync.cfg.anon }, body: JSON.stringify(body) }); }
+  catch (_) { throw new Error('Tidak bisa terhubung. Periksa internet lalu coba lagi.'); }
   let j = null; try { j = await res.json(); } catch (_) {}
-  if (!res.ok) throw new Error(authMsg(res.status, j));
+  if (!res.ok) { const e = new Error(authMsg(res.status, j)); e.ended = LoginLogic.sessionEnded(res.status, j); throw e; }
   return j;
 }
 function authMsg(status, j) {
@@ -91,6 +93,7 @@ function authMsg(status, j) {
   if (/already registered|already exists/i.test(m)) return 'Email sudah terdaftar. Gunakan Masuk.';
   if (/email not confirmed/i.test(m)) return 'Email belum dikonfirmasi. Buka email dari Supabase, klik tautannya, lalu Masuk.';
   if (/password/i.test(m) && /(short|least|weak)/i.test(m)) return 'Kata sandi terlalu lemah (minimal 6 karakter).';
+  if (/signups? not allowed|signup.*disabled/i.test(m)) return 'Pendaftaran akun baru sedang ditutup. Masuk dengan akun yang sudah ada.';
   if (/rate limit|too many/i.test(m)) return 'Terlalu banyak percobaan. Tunggu beberapa menit.';
   if (status === 401 || /api ?key/i.test(m)) return 'Kunci (anon/publishable) tidak valid untuk proyek ini.';
   return m || ('Gagal (' + status + ')');
@@ -100,15 +103,19 @@ function storeSession(j) {
   sync.auth = { access: j.access_token, refresh: j.refresh_token, exp: Date.now() + (num(j.expires_in) || 3600) * 1000 - 60000, uid: j.user && j.user.id, email: (j.user && j.user.email) || (sync.auth && sync.auth.email) || '' };
   LS.set('jlp_sync_auth', JSON.stringify(sync.auth)); return true;
 }
-async function syncSignIn(email, pass) { const j = await authReq('/auth/v1/token?grant_type=password', { email, password: pass }); storeSession(j); }
-async function syncSignUp(email, pass) {
-  const j = await authReq('/auth/v1/signup', { email, password: pass });
-  if (j && j.access_token) { storeSession(j); return true; }
-  return false; // butuh konfirmasi email
-}
-async function refreshToken() {
-  const j = await authReq('/auth/v1/token?grant_type=refresh_token', { refresh_token: sync.auth.refresh });
-  if (!storeSession(j)) throw new Error('Sesi berakhir. Masuk lagi.');
+let refreshing = null;
+const refreshToken = () => refreshing || (refreshing = doRefresh().finally(() => { refreshing = null; }));
+// Token penyegaran sekali pakai: tab lain mungkin sudah menggantinya, jadi baca dulu yang tersimpan.
+async function doRefresh() {
+  const adopt = () => { const s = jparse(LS.get('jlp_sync_auth'), null); if (s && s.refresh && s.refresh !== sync.auth.refresh) { sync.auth = s; return true; } return false; };
+  if (adopt() && Date.now() < (sync.auth.exp || 0)) return;
+  try {
+    const j = await authReq('/auth/v1/token?grant_type=refresh_token', { refresh_token: sync.auth.refresh });
+    if (!storeSession(j)) throw new Error('Sesi berakhir. Masuk lagi.');
+  } catch (e) {
+    if (e.ended && !adopt()) syncSessionEnded();
+    throw e;
+  }
 }
 async function ensureToken() { if (!sync.auth) throw new Error('Belum masuk'); if (Date.now() >= (sync.auth.exp || 0)) await refreshToken(); }
 async function sbFetch(path, opts = {}, retry = true) {
@@ -379,8 +386,8 @@ function syncOnViewChange() { if (sync.deferred) setTimeout(() => syncRun(), 250
 function syncStart() {
   syncLoadCfg(); clearInterval(sync.timer);
   if (!syncReady()) { setSyncStatus(syncConfigured() && syncLoggedIn() && !syncOn() ? 'paused' : 'off'); return; }
-  loadSyncState().then(() => syncRun());
   sync.timer = setInterval(() => { if (!document.hidden) syncRun(); }, 45000);
+  return loadSyncState().then(() => syncRun());
 }
 document.addEventListener('visibilitychange', () => { if (!document.hidden) syncKick(300); });
 addEventListener('online', () => syncKick(500));
@@ -439,15 +446,13 @@ function syncCardHTML() {
       '<div class="split"><div><label class="f"><span>Project URL</span><input type="text" id="sbUrl" placeholder="https://xxxx.supabase.co" autocapitalize="off" autocomplete="off"></label><label class="f"><span>Kunci anon / publishable</span><input type="text" id="sbKey" placeholder="eyJ… atau sb_publishable_…" autocapitalize="off" autocomplete="off"></label><button type="button" class="btn" id="sbSave">Simpan koneksi</button></div>' +
       '<div><label class="f"><span>Atau tempel “Kode koneksi” dari perangkat lain</span><input type="text" id="sbCode" placeholder="Kode dari perangkat pertama" autocapitalize="off" autocomplete="off"></label><button type="button" class="btn ghost" id="sbApplyCode">Terapkan kode</button></div></div>';
   } else if (!syncLoggedIn()) {
-    h += '<p class="small">Proyek: <b>' + esc(sync.cfg.url.replace(/^https?:\/\//, '')) + '</b>. Masuk dengan akun yang sama di semua perangkat.</p>' +
-      '<div class="split"><div><label class="f"><span>Email</span><input type="text" id="sbEmail" inputmode="email" autocapitalize="off" autocomplete="username" value="' + esc(LS.get('jlp_sync_email') || '') + '"></label><label class="f"><span>Kata sandi (min. 6 karakter)</span><input type="password" id="sbPass" autocomplete="current-password"></label>' +
-      '<div class="row"><button type="button" class="btn" id="sbIn">Masuk</button><button type="button" class="btn ghost" id="sbUp">Daftar akun baru</button></div><div class="small" id="sbMsg" style="margin-top:8px"></div></div>' +
-      '<div class="small">Daftar sekali di perangkat pertama, lalu <b>Masuk</b> di perangkat lain dengan email &amp; sandi yang sama. <br><br><button type="button" class="btn ghost sm" id="sbChange">Ubah koneksi</button></div></div>';
+    h += '<p class="small">Belum masuk, jadi data hanya ada di perangkat ini. Masuk dengan akun yang sama di semua perangkat.</p>' +
+      '<div class="row"><button type="button" class="btn" id="sbLogin">Masuk</button><button type="button" class="btn ghost" id="sbChange">Ubah koneksi</button></div>';
   } else {
     h += '<p class="small">Masuk sebagai <b>' + esc(sync.auth.email || '') + '</b> · <span id="syncLine">' + syncLineHTML() + '</span></p>' +
       '<label class="small" style="display:flex;gap:8px;align-items:center;margin-bottom:10px"><input type="checkbox" id="sbAuto" ' + (syncOn() ? 'checked' : '') + ' style="width:auto;min-height:auto"> Sinkron otomatis (saat data berubah, saat dibuka, dan tiap 45 detik)</label>' +
       '<div class="row"><button type="button" class="btn" id="sbNow">⇄ Sinkronkan sekarang</button><button type="button" class="btn ghost" id="sbCopy">Salin kode koneksi</button><button type="button" class="btn ghost" id="sbLink">Salin tautan penyiapan</button><button type="button" class="btn ghost" id="sbOut">Keluar</button></div>' +
-      '<p class="small" style="margin:10px 0 0">Perangkat baru: pasang aplikasi, buka Pengaturan › tempel kode koneksi, lalu Masuk. Data akan turun otomatis. Di iPhone/iPad, aplikasi di layar utama punya penyimpanan terpisah dari Safari: lakukan penyiapan di aplikasi layar utama.</p>' +
+      '<p class="small" style="margin:10px 0 0">Perangkat baru: pasang aplikasi lalu masuk dengan akun ini. Data akan turun otomatis. Di iPhone/iPad, aplikasi di layar utama punya penyimpanan terpisah dari Safari: lakukan penyiapan di aplikasi layar utama.</p>' +
       '<details class="dd"><summary>Lanjutan</summary><div class="row" style="margin-top:8px"><button type="button" class="btn ghost sm" id="sbReset">Reset status sinkron perangkat ini</button></div><p class="small" style="margin-bottom:0">Reset hanya mengosongkan catatan “sudah sinkron sampai mana”; data tidak dihapus. Dipakai jika sinkron terasa tidak konsisten.</p></details>';
     h += '<div id="spaceBox">' + spaceBlockHTML() + '</div>';
     if (sync.conflicts.length) h += '<div class="sec">Konflik (' + sync.conflicts.length + ')</div><p class="small">Dua perangkat mengubah data yang sama. Satu versi dipakai, versi lainnya disimpan di sini.</p><div class="list">' + sync.conflicts.slice().reverse().map(c => '<div class="item"><div style="flex:1;min-width:0"><b>' + esc(c.lbl) + '</b><small>Versi ' + esc(c.side) + ' yang tidak dipakai · ' + new Date(c.t).toLocaleString('id-ID', { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' }) + '</small></div><button type="button" class="btn ghost sm" data-cu="' + c.k + '">Pakai versi ini</button><button type="button" class="btn ghost sm" data-cd="' + c.k + '">Buang</button></div>').join('') + '</div>';
@@ -456,7 +461,6 @@ function syncCardHTML() {
 }
 function bindSyncCard() {
   const on = (id, fn) => { const el = $('#' + id); if (el) el.onclick = fn; };
-  const msg = t => { const m = $('#sbMsg'); if (m) m.textContent = t; };
   on('sbSave', () => {
     const url = normUrl($('#sbUrl').value), key = $('#sbKey').value.trim();
     if (!url || !key) { toast('Isi Project URL (https://xxxx.supabase.co) dan kunci'); return; }
@@ -467,22 +471,11 @@ function bindSyncCard() {
     LS.set('jlp_sync_cfg', JSON.stringify(c)); syncLoadCfg(); renderSettings();
   });
   on('sbChange', () => { LS.del('jlp_sync_cfg'); LS.del('jlp_sync_auth'); syncLoadCfg(); setSyncStatus('off'); renderSettings(); });
-  const doAuth = async up => {
-    const e = $('#sbEmail').value.trim(), p = $('#sbPass').value;
-    if (!e || p.length < 6) { msg('Isi email dan kata sandi (min. 6 karakter).'); return; }
-    msg('Memproses…');
-    LS.set('jlp_sync_email', e);   // hanya email (bukan kata sandi) agar tidak mengetik ulang di perangkat ini
-    try {
-      if (up) { const ok = await syncSignUp(e, p); if (!ok) { msg('Akun dibuat. Cek email untuk konfirmasi, lalu tekan Masuk.'); return; } }
-      else await syncSignIn(e, p);
-      LS.set('jlp_sync_on', '1'); sync.st = null; syncStart(); renderSettings(); toast('Berhasil masuk. Menyinkronkan…');
-    } catch (er) { msg(er.message); }
-  };
-  on('sbIn', () => doAuth(false)); on('sbUp', () => doAuth(true));
+  on('sbLogin', () => loginOpen());
   on('sbNow', () => { LS.set('jlp_sync_on', '1'); syncStart(); });
   on('sbCopy', async () => { try { await navigator.clipboard.writeText(connCode()); toast('Kode koneksi disalin'); } catch (_) { prompt('Salin kode koneksi:', connCode()); } });
   on('sbLink', async () => { const u = location.origin + location.pathname + '#/setelan?cfg=' + encodeURIComponent(connCode()); try { await navigator.clipboard.writeText(u); toast('Tautan penyiapan disalin'); } catch (_) { prompt('Salin tautan:', u); } });
-  on('sbOut', async () => { if (!await confirmBox('Keluar dari akun sinkron di perangkat ini? Data lokal tetap ada.', { title: 'Keluar' })) return; LS.del('jlp_sync_auth'); syncLoadCfg(); clearInterval(sync.timer); setSyncStatus('off'); renderSettings(); });
+  on('sbOut', async () => { if (!await confirmBox('Keluar dari akun sinkron di perangkat ini? Data lokal tetap ada.', { title: 'Keluar' })) return; LS.del('jlp_sync_auth'); LS.del('jlp_login_skip'); syncLoadCfg(); clearInterval(sync.timer); clearTimeout(sync.dt); setSyncStatus('off'); renderSettings(); loginOpen(); });
   on('sbReset', async () => { if (!await confirmBox('Reset catatan sinkron di perangkat ini? Sinkron berikutnya akan mencocokkan ulang semua data (versi server diutamakan bila berbeda; salinan lokal masuk Konflik).', { title: 'Reset status sinkron', ok: 'Reset' })) return; sync.st = { cursor: null, base: {}, blobs: {} }; await saveSyncState(); toast('Status direset'); syncRun(); });
   const au = $('#sbAuto'); if (au) au.onchange = () => { LS.set('jlp_sync_on', au.checked ? '1' : '0'); if (au.checked) syncStart(); else { clearInterval(sync.timer); setSyncStatus('paused'); } };
   $$('[data-cu]').forEach(b => b.onclick = () => useConflict(b.dataset.cu));

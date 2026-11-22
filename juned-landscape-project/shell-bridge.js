@@ -274,9 +274,12 @@ async function boot() {
   updateInstallUI();
   syncLoadCfg(); syncCheckSetupLink();
   await odHandleRedirect();
+  if (sync.auth && sync.auth.uid && !LS.get('jlp_sync_uid')) LS.set('jlp_sync_uid', sync.auth.uid);   // sesi dari versi sebelum layar login
   state.view = null;
+  // Modul dibuka setelah login, supaya data dari akun sudah turun sebelum tampil.
+  const synced = await loginGate();
   setView(parseHash(), true);
-  syncStart();
+  if (!synced) syncStart();
   setSyncStatus(sync.status);
   odKick(10000);
   addEventListener('online', () => { if (state.view === 'home') renderHome(); });
