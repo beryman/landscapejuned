@@ -105,11 +105,12 @@ async function saveSpaceFlow({ auto = false } = {}) {
   line = modal ? $('#spStep', modal.el) : null;
   const out = { backup: null, saved: 0, n: 0, deleted: 0 };
   try {
-    if (odReady() && !odState.needLogin) { step('Mencadangkan foto asli ke OneDrive…'); out.backup = await odBackupNow({ onStep: step }); }
-    else if (auto) throw new Error('OneDrive belum terhubung atau perlu masuk ulang');
+    if (gdReady()) { step('Mencadangkan foto asli ke Google Drive…'); out.backup = await gdBackupNow({ onStep: step }); }
+    else if (odReady() && !odState.needLogin) { step('Mencadangkan foto asli ke OneDrive…'); out.backup = await odBackupNow({ onStep: step }); }
+    else if (auto) throw new Error('Google Drive atau OneDrive belum terhubung atau perlu masuk ulang');
     else {
       if (modal) modal.close();
-      if (!await confirmBox('OneDrive belum terhubung. Aplikasi akan mengunduh file cadangan lengkap (foto asli) ke perangkat ini sebagai pengaman, lalu mengecilkan foto.\n\nSimpan file cadangannya sebelum melanjutkan. Lanjutkan?', { title: 'Cadangan dulu', ok: 'Unduh & lanjutkan' })) return null;
+      if (!await confirmBox('Google Drive dan OneDrive belum terhubung (atau sesinya habis). Aplikasi akan mengunduh file cadangan lengkap (foto asli) ke perangkat ini sebagai pengaman, lalu mengecilkan foto.\n\nSimpan file cadangannya sebelum melanjutkan. Lanjutkan?', { title: 'Cadangan dulu', ok: 'Unduh & lanjutkan' })) return null;
       modal = openModal({ title: 'Hemat ruang cloud', body: '<p id="spStep" style="margin:0">Menyiapkan cadangan…</p>', foot: [] }); line = $('#spStep', modal.el);
       await makeBackupDownload(); await sleep(800);
     }
@@ -136,7 +137,7 @@ async function spaceAfterSync() {
   const u = await spaceFetchUsage(); if (!u) return;
   if (state.view === 'home') renderHome();
   if (spacePct() < spaceThreshold()) return;
-  if (LS.get('jlp_reduce_auto') === '0' || !odReady() || odState.needLogin) return;
+  if (LS.get('jlp_reduce_auto') === '0' || !(gdReady() || (odReady() && !odState.needLogin))) return;
   if (!['home', 'setelan'].includes(state.view)) return;   // jangan ganggu saat sedang di dalam modul
   if (Date.now() - num(LS.get('jlp_reduce_last')) < 6 * 3600000) return;
   LS.set('jlp_reduce_last', String(Date.now()));
@@ -149,7 +150,7 @@ function cloudBannerHTML() {
   let h = '';
   if (space.full || (space.usage && spacePct() >= spaceThreshold())) {
     const p = space.full ? 100 : Math.round(spacePct());
-    h += '<div class="banner"><div class="sp"><b>' + (space.full ? 'Ruang cloud penuh' : 'Ruang cloud ' + p + '% terpakai') + '</b><div class="small">' + (space.full ? 'Penyimpanan cloud menolak data baru. Data di perangkat ini aman.' : 'Cadangan foto asli ke OneDrive lalu kecilkan foto agar muat lebih lama.') + '</div></div><button type="button" class="btn sm" id="spBannerBtn">Hemat ruang</button></div>';
+    h += '<div class="banner"><div class="sp"><b>' + (space.full ? 'Ruang cloud penuh' : 'Ruang cloud ' + p + '% terpakai') + '</b><div class="small">' + (space.full ? 'Penyimpanan cloud menolak data baru. Data di perangkat ini aman.' : 'Cadangan foto asli ke Google Drive atau OneDrive lalu kecilkan foto agar muat lebih lama.') + '</div></div><button type="button" class="btn sm" id="spBannerBtn">Hemat ruang</button></div>';
   }
   if (odCfg() && odCfg().clientId && odAuth() && odState.needLogin) h += '<div class="banner info"><div class="sp"><b>OneDrive perlu masuk ulang</b><div class="small">Sesi Microsoft berlaku 24 jam. Masuk sekali untuk melanjutkan cadangan otomatis.</div></div><button type="button" class="btn sm" id="odBannerBtn">Masuk OneDrive</button></div>';
   return h;
@@ -163,8 +164,8 @@ function spaceBlockHTML() {
   return '<div class="sec">Ruang cloud</div>' +
     (u ? '<div class="bar" style="height:10px"><i style="width:' + p.toFixed(1) + '%;' + (cls === 'bad' ? 'background:var(--red)' : cls === 'warn' ? 'background:var(--gold)' : '') + '"></i></div><p class="small" style="margin:6px 0 10px">Database Supabase: <b>' + fmtSize(u.db) + '</b> dari ' + (lim >= 1024 ? (lim / 1024) + ' GB' : lim + ' MB') + ' (' + p.toFixed(0) + '%) · data Anda: ' + fmtSize(u.mine) + ' (' + u.rows + ' item)</p>' : '<p class="small">' + (space.err ? 'Gagal mengukur: ' + esc(space.err) : 'Mengukur…') + '</p>') +
     '<div class="row" style="margin-bottom:8px"><label class="small">Paket: <select id="spLimit" style="width:auto;min-height:36px;padding:4px 8px"><option value="500" ' + (lim === 500 ? 'selected' : '') + '>Gratis (500 MB)</option><option value="8192" ' + (lim === 8192 ? 'selected' : '') + '>Pro (8 GB)</option></select></label><button type="button" class="btn ghost sm" id="spNow">Hemat ruang sekarang</button></div>' +
-    '<label class="small" style="display:flex;gap:8px;align-items:center;flex-wrap:wrap"><input type="checkbox" id="spAuto" ' + (LS.get('jlp_reduce_auto') !== '0' ? 'checked' : '') + ' style="width:auto;min-height:auto"> Hemat ruang otomatis saat terpakai ≥ <input type="number" id="spPct" min="50" max="98" value="' + spaceThreshold() + '" style="width:70px;min-height:32px;padding:3px 8px">% (butuh OneDrive terhubung)</label>' +
-    '<p class="small" style="margin:8px 0 0">Cara kerja: foto asli dicadangkan ke OneDrive dulu, lalu foto di aplikasi dikecilkan (maks. 1000 px) dan salinan lama di cloud dihapus. Angka di dashboard Supabase bisa tidak langsung turun; ruang yang kosong dipakai ulang untuk data baru.</p>';
+    '<label class="small" style="display:flex;gap:8px;align-items:center;flex-wrap:wrap"><input type="checkbox" id="spAuto" ' + (LS.get('jlp_reduce_auto') !== '0' ? 'checked' : '') + ' style="width:auto;min-height:auto"> Hemat ruang otomatis saat terpakai ≥ <input type="number" id="spPct" min="50" max="98" value="' + spaceThreshold() + '" style="width:70px;min-height:32px;padding:3px 8px">% (butuh Google Drive atau OneDrive terhubung)</label>' +
+    '<p class="small" style="margin:8px 0 0">Cara kerja: foto asli dicadangkan ke Google Drive atau OneDrive dulu, lalu foto di aplikasi dikecilkan (maks. 1000 px) dan salinan lama di cloud dihapus. Angka di dashboard Supabase bisa tidak langsung turun; ruang yang kosong dipakai ulang untuk data baru.</p>';
 }
 function bindSpaceBlock() {
   const lim = $('#spLimit'); if (lim) lim.onchange = () => { LS.set('jlp_cloud_limit_mb', lim.value); refreshSpaceBox(); };

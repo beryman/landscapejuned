@@ -60,8 +60,13 @@ async function expandCanon(v, fetchBlob, blobKeyHint) {
 }
 
 /* ---------- konfigurasi & sesi ---------- */
+// Koneksi bawaan dari config.js; yang disimpan di perangkat (kode koneksi manual) tetap diutamakan.
+function builtInCfg() {
+  const c = window.JLP_CONFIG || {}, url = normUrl(c.supabaseUrl);
+  return url && c.supabaseAnon ? { url, anon: String(c.supabaseAnon).trim() } : null;
+}
 function syncLoadCfg() {
-  sync.cfg = jparse(LS.get('jlp_sync_cfg'), null);
+  sync.cfg = jparse(LS.get('jlp_sync_cfg'), null) || builtInCfg();
   sync.auth = jparse(LS.get('jlp_sync_auth'), null);
 }
 const syncConfigured = () => !!(sync.cfg && sync.cfg.url && sync.cfg.anon);
@@ -434,7 +439,7 @@ function syncCardHTML() {
       '<div><label class="f"><span>Atau tempel “Kode koneksi” dari perangkat lain</span><input type="text" id="sbCode" placeholder="Kode dari perangkat pertama" autocapitalize="off" autocomplete="off"></label><button type="button" class="btn ghost" id="sbApplyCode">Terapkan kode</button></div></div>';
   } else if (!syncLoggedIn()) {
     h += '<p class="small">Proyek: <b>' + esc(sync.cfg.url.replace(/^https?:\/\//, '')) + '</b>. Masuk dengan akun yang sama di semua perangkat.</p>' +
-      '<div class="split"><div><label class="f"><span>Email</span><input type="text" id="sbEmail" inputmode="email" autocapitalize="off" autocomplete="username"></label><label class="f"><span>Kata sandi (min. 6 karakter)</span><input type="password" id="sbPass" autocomplete="current-password"></label>' +
+      '<div class="split"><div><label class="f"><span>Email</span><input type="text" id="sbEmail" inputmode="email" autocapitalize="off" autocomplete="username" value="' + esc(LS.get('jlp_sync_email') || '') + '"></label><label class="f"><span>Kata sandi (min. 6 karakter)</span><input type="password" id="sbPass" autocomplete="current-password"></label>' +
       '<div class="row"><button type="button" class="btn" id="sbIn">Masuk</button><button type="button" class="btn ghost" id="sbUp">Daftar akun baru</button></div><div class="small" id="sbMsg" style="margin-top:8px"></div></div>' +
       '<div class="small">Daftar sekali di perangkat pertama, lalu <b>Masuk</b> di perangkat lain dengan email &amp; sandi yang sama. <br><br><button type="button" class="btn ghost sm" id="sbChange">Ubah koneksi</button></div></div>';
   } else {
@@ -465,6 +470,7 @@ function bindSyncCard() {
     const e = $('#sbEmail').value.trim(), p = $('#sbPass').value;
     if (!e || p.length < 6) { msg('Isi email dan kata sandi (min. 6 karakter).'); return; }
     msg('Memproses…');
+    LS.set('jlp_sync_email', e);   // hanya email (bukan kata sandi) agar tidak mengetik ulang di perangkat ini
     try {
       if (up) { const ok = await syncSignUp(e, p); if (!ok) { msg('Akun dibuat. Cek email untuk konfirmasi, lalu tekan Masuk.'); return; } }
       else await syncSignIn(e, p);

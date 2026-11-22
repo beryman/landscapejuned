@@ -153,7 +153,7 @@ async function createSurvey({ name, client, pack }) {
   const iso = new Date(now.getTime() - now.getTimezoneOffset() * 60000).toISOString().slice(0, -1);
   const last = Object.values(all).reduce((max, v) => { const m = /^LS-(\d{4})-(\d+)$/.exec((jparse(v, {}) || {}).code || ''); return m && +m[1] === year ? Math.max(max, +m[2]) : max; }, 0);
   const id = 'jlp' + now.getTime().toString(36) + Math.random().toString(36).slice(2, 8), code = 'LS-' + year + '-' + String(last + 1).padStart(4, '0');
-  await KV.set('landspace:p:' + id, JSON.stringify({ id, code, name, client: client || '', address: '', surveyDate: iso, surveyor: '', type: 'outdoor', status: 'draft', coverPhotoId: null, notes: pack === 'batu_alam' ? 'Jenis pekerjaan: batu alam' : pack === 'tekstur' ? 'Jenis pekerjaan: cat tekstur' : '', archived: false, createdAt: iso, updatedAt: iso, areas: [], photos: [], history: [{ at: iso, fieldId: null, summary: 'Proyek dibuat' }] }));
+  await KV.set('landspace:p:' + id, JSON.stringify({ id, code, name, client: client || '', address: '', surveyDate: iso, surveyor: '', type: pack === 'batu_alam' ? 'batuAlam' : pack === 'tekstur' ? 'tekstur' : 'outdoor', status: 'draft', coverPhotoId: null, notes: pack === 'batu_alam' ? 'Jenis pekerjaan: batu alam' : pack === 'tekstur' ? 'Jenis pekerjaan: cat tekstur' : '', archived: false, createdAt: iso, updatedAt: iso, areas: [], photos: [], history: [{ at: iso, fieldId: null, summary: 'Proyek dibuat' }] }));
   await KV.flush();
   unloadFrame('survei');   // modul punya cache sendiri; muat ulang agar lembar baru terlihat
   syncKick(1500);

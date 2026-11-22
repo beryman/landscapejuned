@@ -34,7 +34,7 @@ async function renderHome() {
   const lb = await lastBackupDate();
   const days = lb ? Math.floor((Date.now() - lb.getTime()) / 864e5) : null;
   if (hasTK && (days === null || days >= 14)) {
-    h += '<div class="banner"><div class="sp"><b>' + (days === null ? 'Belum ada cadangan' : 'Cadangan terakhir ' + days + ' hari lalu') + '</b><div class="small">Buat cadangan berkala agar data aman bila perangkat hilang atau browser membersihkan data.</div></div><button type="button" class="btn sm" ' + act(() => makeBackupDownload()) + '>Buat cadangan</button></div>';
+    h += '<div class="banner"><div class="sp"><b>' + (days === null ? 'Belum ada cadangan' : 'Cadangan terakhir ' + days + ' hari lalu') + '</b><div class="small">Buat cadangan berkala agar data aman bila perangkat hilang atau browser membersihkan data.</div></div>' + (gdClientId() ? '<button type="button" class="btn sm" id="gdBannerBtn">Ke Google Drive</button>' : '') + '<button type="button" class="btn ' + (gdClientId() ? 'ghost ' : '') + 'sm" ' + act(() => makeBackupDownload()) + '>' + (gdClientId() ? 'Unduh file' : 'Buat cadangan') + '</button></div>';
   }
 
   if (!hasTK) {
@@ -68,6 +68,7 @@ async function renderHome() {
     if (homeStage === null && doneN) h += '<div class="small" style="margin-top:8px">' + doneN + ' proyek sudah selesai. Ketuk <b>Selesai</b> di atas untuk melihatnya.</div>';
   }
   body.innerHTML = h; bindBanners();
+  const gb = $('#gdBannerBtn'); if (gb) gb.onclick = () => gdBackupFlow(gb);
   body.onclick = e => { const b = e.target.closest('[data-a]'); if (b && homeActs[+b.dataset.a]) homeActs[+b.dataset.a](); };
 }
 
@@ -88,11 +89,11 @@ async function renderSettings() {
     '<p class="small" style="margin-bottom:0">Bisa juga memulihkan file cadangan dari aplikasi lama (Taman Kerja, PlantBase, Sepran): format dikenali otomatis dan hanya menggantikan modul terkait.</p></div>' +
     '<div class="card"><h3>Penyimpanan</h3><div class="kv" style="margin:8px 0"><span>Terpakai</span><b>' + esc(usage) + '</b><span>Penyimpanan permanen</span><b>' + persisted + '</b></div><div class="row"><button type="button" class="btn ghost sm" id="stPersist">Minta penyimpanan permanen</button></div><p class="small" style="margin-bottom:0">iPhone/iPad: pasang ke layar utama agar Safari tidak membersihkan data yang lama tidak dibuka.</p></div>' +
     '<div class="card"><h3>Pembaruan aplikasi</h3><p class="small">Versi terpasang: <b>' + APP_VERSION + '</b>. Pembaruan diunduh otomatis saat online.</p><div class="row"><button type="button" class="btn ghost sm" id="stUpdate">Periksa pembaruan</button><button type="button" class="btn ghost sm" id="stRefresh">Segarkan &amp; bersihkan cache</button></div><p class="small" style="margin-bottom:0">Membersihkan cache tidak menghapus data Anda.</p></div>' +
-    '<details class="dd" style="grid-column:1/-1"' + (syncConfigured() || location.hash.includes('sync') ? ' open' : '') + '><summary>Lanjutan: sinkron antar perangkat dan cadangan OneDrive</summary><div class="split" style="margin-top:10px">' + syncCardHTML() + odCardHTML() + '</div></details>' +
+    '<details class="dd" style="grid-column:1/-1"' + (syncConfigured() || location.hash.includes('sync') ? ' open' : '') + '><summary>Lanjutan: sinkron antar perangkat dan cadangan cloud</summary><div class="split" style="margin-top:10px">' + syncCardHTML() + gdCardHTML() + odCardHTML() + '</div></details>' +
     '<div class="card"><h3>Hapus semua data</h3><p class="small">Menghapus seluruh data di perangkat ini, termasuk data keuangan lama. Buat cadangan lebih dulu.</p><button type="button" class="btn danger sm" id="stReset">Hapus semua data…</button></div>' +
     '<div class="card"><h3>Tentang</h3><p class="small" style="margin-bottom:0">Juned Landscape Project memantau proyek lanskap dari <b>Survei</b> (LANDSPACE), penawaran, RAB, sampai opname di <b>Proyek</b> (Taman Kerja), dengan <b>Katalog</b> tanaman dan material (PlantBase). Data tersimpan di perangkat; sinkron antar perangkat bersifat opsional.</p></div>' +
     '</div>';
-  bindSyncCard(); bindOdCard(); bindSpaceBlock(); loadSpaceBox();
+  bindSyncCard(); bindGdCard(); bindOdCard(); bindSpaceBlock(); loadSpaceBox();
   const on = (id, fn) => { const el = $('#' + id); if (el) el.onclick = fn; };
   const me = $('#stMe');
   me.onchange = () => { const w = frameWin('proyek'); (w && w.KV ? w.KV : KV).ls.setItem('tk:me', me.value.trim() || 'Anggota'); toast('Nama disimpan'); };

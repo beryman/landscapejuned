@@ -2,6 +2,15 @@
 
 Data aplikasi tetap tersimpan di tiap perangkat (jadi tetap bisa dipakai offline). **Supabase** dipakai sebagai penghubung: perubahan di satu perangkat dikirim ke cloud lalu turun ke perangkat lain.
 
+## Koneksi tersimpan di aplikasi (versi 1.8.0)
+URL dan kunci publik proyek Supabase sudah ada di `config.js`, jadi perangkat baru **tidak perlu menempel apa pun**: cukup masuk dengan email dan kata sandi. Aplikasi mengingat email di perangkat itu (bukan kata sandi) dan menjaga sesi lewat token penyegaran.
+
+Ingat dua hal karena repo ini **publik**:
+- Kunci di `config.js` adalah kunci *publik* (`sb_publishable_…`). Data Anda dilindungi aturan RLS per akun, bukan oleh kerahasiaan kunci itu. **Jangan pernah** menaruh kunci `service_role` atau `secret` di sana.
+- Siapa pun yang tahu alamat aplikasi bisa mencoba mendaftar akun di proyek Supabase Anda. Setelah semua akun Anda dibuat, matikan pendaftaran: Supabase › **Authentication › Sign In / Providers** › matikan **Allow new users to sign up**. Tombol *Daftar akun baru* di aplikasi lalu tidak dipakai lagi.
+
+Kode koneksi manual (di bawah) tetap diutamakan bila ada, dan *Ubah koneksi* kembali ke bawaan.
+
 ## A. Penyiapan sekali saja (± 10 menit)
 1. Buka **supabase.com**, daftar gratis, lalu **New project**. Pilih region terdekat (mis. Singapore) dan buat password database (simpan).
 2. Menu **SQL Editor › New query**. Tempel seluruh isi file **`sync-setup.sql`**, klik **Run**. Harus muncul "Success".

@@ -26,6 +26,12 @@ Aplikasi untuk memantau proyek lanskap dari **Survei, Penawaran, RAB, Opname, sa
 - **Paket pekerjaan.** Di tab Papan, satu ketukan mengisi tugas dari template beberapa jenis pekerjaan (misalnya taman + kolam).
 - **Laporan cepat.** Di tab Laporan: foto, catatan, dan volume dalam satu langkah. Volume otomatis masuk opname.
 
+**Fitur tambahan (versi 1.8.0)**
+- **Survei sesuai jenis pekerjaan.** Survei batu alam menyebut *Area pasang batu*, survei cat tekstur menyebut *Area dinding*, dan taman tetap *Area taman*. Jenis bisa diubah lewat *Ubah info* di lembar survei.
+- **Gemini mengenali tanaman dari foto.** Di Katalog › Tambah tanaman, pilih foto dan kolom nama, nama ilmiah, famili, kategori, tinggi, jarak tanam, cahaya, penyiraman, dan pemupukan terisi otomatis. Hanya kolom yang masih kosong yang diisi. Isi kunci di Katalog › Pengaturan & Backup (kunci gratis dari aistudio.google.com/apikey). Kunci disimpan hanya di perangkat, tidak ikut cadangan atau sinkron, dan hasilnya selalu perlu diperiksa.
+- **Koneksi Supabase tersimpan.** Lihat **SINKRON.md**.
+- **Cadangan Google Drive.** Lihat **GOOGLE-DRIVE.md**.
+
 Tahap proyek dihitung otomatis dari data ini. Saran pengembangan ada di **SARAN-PENGEMBANGAN.md**.
 
 **Keuangan sudah dilepas sejak versi 1.4.0.** Data keuangan lama tidak dihapus: tetap ada di perangkat, ikut file cadangan, dan tetap ada di Supabase.
@@ -79,9 +85,10 @@ Uji lokal di komputer: klik dua kali `jalankan-lokal.command` (Mac) atau jalanka
 index.html  shell-core.js  shell-pages.js  shell-bridge.js  shell-sync.js  shell.css
 sync-setup.sql  SINKRON.md  ONEDRIVE.md
 shell-onedrive.js  shell-space.js
-manifest.webmanifest  sw.js  icons/  lib/ (kv.js, common.js, survei-calc.js, sync-merge.js, proyek-logic.js, embed.css, xlsx)
+manifest.webmanifest  sw.js  icons/  config.js  shell-gdrive.js  GOOGLE-DRIVE.md
+lib/ (kv.js, common.js, survei-calc.js, sync-merge.js, proyek-logic.js, gemini-plant.js, gdrive-backup.js, embed.css, xlsx)
 apps/ proyek.html  tanaman.html  survei/ (aplikasi Flutter web)
-test/ survei-calc.test.js  sync-merge.test.js  proyek-logic.test.js  sync-two-devices.js (uji browser, hanya localhost)
+test/ survei-calc, sync-merge, proyek-logic, gemini-plant, gdrive-backup (*.test.js, jalankan dengan node)  sync-two-devices.js (uji browser, hanya localhost)
 ```
 
 - **Cadangan OneDrive** dan hemat ruang otomatis: lihat **ONEDRIVE.md**.
