@@ -40,10 +40,11 @@
     if (status === 429) return new Error('Kuota atau batas permintaan Gemini habis. Tunggu sebentar atau cek kuota kunci Anda.');
     if (status === 401 || status === 403 || (status === 400 && /api key|permission/i.test(msg))) { const e = new Error('Kunci Gemini tidak valid atau tidak punya izin. Periksa kunci di Pengaturan.'); e.fatal = true; return e; }
     if (status === 400) return new Error('Gemini menolak foto atau permintaan ini' + (msg ? ': ' + msg.slice(0, 120) : '') + '.');
+    if (status === 500 || status === 503) return new Error('Server Gemini sedang sibuk (kode ' + status + '). Tunggu semenit lalu coba lagi.');
     return new Error('Gemini tidak tersedia (kode ' + status + ').');
   }
 
-  async function identify(dataUrl, { key, models = MODELS, fetch: f = root.fetch && root.fetch.bind(root) } = {}) {
+  async function identify(dataUrl, { key, models = MODELS, fetch: f = root.fetch && root.fetch.bind(root), wait = ms => new Promise(r => setTimeout(r, ms)) } = {}) {
     if (!String(key || '').trim()) throw new Error('Isi kunci Gemini dulu di Pengaturan.');
     const m = /^data:(image\/[a-z0-9.+-]+);base64,(.+)$/i.exec(dataUrl || '');
     if (!m) throw new Error('Foto belum siap. Pilih foto tanaman dulu.');
@@ -54,8 +55,10 @@
     let last;
     for (const model of models) {
       let res;
-      try { res = await f(ENDPOINT + encodeURIComponent(model) + ':generateContent', { method: 'POST', headers: { 'Content-Type': 'application/json', 'x-goog-api-key': String(key).trim() }, body }); }
+      const call = () => f(ENDPOINT + encodeURIComponent(model) + ':generateContent', { method: 'POST', headers: { 'Content-Type': 'application/json', 'x-goog-api-key': String(key).trim() }, body });
+      try { res = await call(); }
       catch (_) { throw new Error('Tidak bisa menghubungi Gemini. Periksa koneksi internet.'); }
+      if (!res.ok && (res.status === 500 || res.status === 503)) { await wait(1500); try { res = await call(); } catch (_) { throw new Error('Tidak bisa menghubungi Gemini. Periksa koneksi internet.'); } }   // sibuk sebentar: coba sekali lagi
       if (!res.ok) {
         let j = null; try { j = await res.json(); } catch (_) {}
         last = httpError(res.status, j);

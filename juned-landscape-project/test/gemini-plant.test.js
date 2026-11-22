@@ -54,6 +54,17 @@ const PNG = 'data:image/jpeg;base64,/9j/AAAA';
     await assert.rejects(() => G.identify(PNG, { key: 'k', models: ['m'], fetch: async () => reply('{"local":"","confidence":0}') }), /tidak terlihat|bukan tanaman/i);
   });
 
+  await t('503 sibuk: model yang sama dicoba sekali lagi lalu berhasil', async () => {
+    let n = 0;
+    const out = await G.identify(PNG, { key: 'k', models: ['a'], wait: async () => {}, fetch: async () => (++n === 1 ? fail(503) : reply('{"local":"Soka"}')) });
+    assert.strictEqual(n, 2);
+    assert.strictEqual(out.fields.local, 'Soka');
+  });
+
+  await t('503 terus-menerus: pesan sibuk yang jelas, bukan kode mentah', async () => {
+    await assert.rejects(() => G.identify(PNG, { key: 'k', models: ['a'], wait: async () => {}, fetch: async () => fail(503) }), /sibuk/i);
+  });
+
   await t('model pertama gagal (404): model berikutnya dicoba dan dilaporkan', async () => {
     const tried = [];
     const out = await G.identify(PNG, { key: 'k', models: ['a', 'b'], fetch: async url => { tried.push(url.match(/models\/([^:]+)/)[1]); return tried.length === 1 ? fail(404) : reply('{"local":"Soka"}'); } });
