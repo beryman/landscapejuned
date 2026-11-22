@@ -28,7 +28,7 @@ Aplikasi untuk memantau proyek lanskap dari **Survei, Penawaran, RAB, Opname, sa
 
 **Fitur tambahan (versi 1.8.0)**
 - **Survei sesuai jenis pekerjaan.** Survei batu alam menyebut *Area pasang batu*, survei cat tekstur menyebut *Area dinding*, dan taman tetap *Area taman*. Jenis bisa diubah lewat *Ubah info* di lembar survei.
-- **Gemini mengenali tanaman dari foto.** Di Katalog › Tambah tanaman, pilih foto dan kolom nama, nama ilmiah, famili, kategori, tinggi, jarak tanam, cahaya, penyiraman, dan pemupukan terisi otomatis. Hanya kolom yang masih kosong yang diisi. Isi kunci di Katalog › Pengaturan & Backup (kunci gratis dari aistudio.google.com/apikey). Kunci disimpan hanya di perangkat, tidak ikut cadangan atau sinkron, dan hasilnya selalu perlu diperiksa.
+- **Gemini mengenali tanaman dari foto.** Di Katalog › Tambah tanaman, pilih foto dan kolom nama, nama ilmiah, famili, kategori, tinggi, jarak tanam, cahaya, penyiraman, dan pemupukan terisi otomatis. Hanya kolom yang masih kosong yang diisi. Isi kunci di Katalog › Pengaturan & Backup (kunci gratis dari aistudio.google.com/apikey). Kunci ikut sinkron ke perangkat lain (lihat versi 1.10.0) dan tidak masuk file cadangan; hasilnya selalu perlu diperiksa.
 - **Koneksi Supabase tersimpan.** Lihat **SINKRON.md**.
 - **Cadangan Google Drive.** Lihat **GOOGLE-DRIVE.md**.
 
@@ -37,6 +37,13 @@ Aplikasi untuk memantau proyek lanskap dari **Survei, Penawaran, RAB, Opname, sa
 - **Rekomendasi tanaman.** Menu *Rekomendasi Tanaman*: pilih cahaya lokasi (terik, semi teduh, teduh), luas area, tinggi maksimal, dan fungsi/kategori. Hasilnya tanaman dari katalog Anda yang cocok, dengan perkiraan jumlah (luas ÷ jarak tanam²) dan biaya. Tanaman yang kolom cahayanya kosong tetap muncul di urutan akhir. *Buat katalog klien dari hasil* mengirim hasilnya ke katalog klien.
 - **Impor banyak foto.** Menu *Impor Banyak Foto*: pilih sampai 10 foto, Gemini mengenali satu per satu, lalu Anda mencentang yang disimpan. Yang namanya sudah ada di katalog tidak tercentang. Bila kunci salah atau kuota habis, sisa foto dilewati. Harga dan stok awal 0 dan perlu Anda isi.
 - **Pengaturan Katalog dirapikan.** Panel cloud, endpoint AI, data aplikasi, dan pemeriksaan data dihapus. Sinkron antar perangkat memakai Pengaturan utama aplikasi.
+
+**Fitur tambahan (versi 1.10.0)** — Gemini
+- **Foto impor terlihat dan hasilnya bisa diedit.** Di *Impor Banyak Foto* foto yang dipilih langsung tampil sebelum dikenali. Tiap hasil punya kolom nama lokal dan ilmiah yang bisa diubah, tombol *Cari dari nama*, dan pilihan "Mungkin:" dari alternatif Gemini. Bila nama diubah tanpa *Cari dari nama*, hanya nama yang disimpan, sedangkan data tanaman yang salah dikenali dibuang.
+- **Isi dari nama.** Di form Tambah tanaman, tombol *Isi dari nama* mengisi data dari nama lokal atau ilmiah, bukan dari foto. Kolom yang tadinya diisi Gemini dari foto yang salah ikut diperbarui, sedangkan ketikan Anda sendiri tidak ditimpa.
+- **Kunci Gemini ikut sinkron.** Isi sekali di Katalog › Pengaturan & Backup; perangkat lain yang login ke akun yang sama ikut memakainya (lihat **SINKRON.md** untuk catatan keamanan). Kunci lama yang hanya ada di satu perangkat dipindahkan otomatis. Kunci tidak masuk file cadangan.
+- **Tes koneksi.** Tombol di panel Gemini memeriksa kunci dan menyebut model mana yang bekerja, atau alasan gagalnya (kunci salah, kuota habis, server sibuk).
+- **Model bawaan** sekarang `gemini-3.6-flash`, dengan `gemini-3.5-flash` dan `gemini-3.5-flash-lite` sebagai cadangan.
 
 Tahap proyek dihitung otomatis dari data ini. Saran pengembangan ada di **SARAN-PENGEMBANGAN.md**.
 

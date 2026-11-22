@@ -98,11 +98,85 @@ const PNG = 'data:image/jpeg;base64,/9j/AAAA';
     await assert.rejects(() => G.identify(PNG, { key: 'k', models: ['a'], fetch: async () => ({ ok: true, status: 200, json: async () => ({ candidates: [] , promptFeedback: { blockReason: 'SAFETY' } }) }) }), /diblokir|kosong/i);
   });
 
+  // ---------- identifikasi dari nama ----------
+  await t('dari nama: hanya teks (tanpa foto), nama ada di perintah, kunci di header, hasil dinormalkan', async () => {
+    let seen;
+    const out = await G.identifyByName('  Pucuk merah  ', { key: 'KUNCI', models: ['m1'], fetch: async (url, o) => { seen = { url, o }; return reply('{"local":"Pucuk merah","scientific":"Syzygium myrtifolium","category":"semak / pagar","height":300,"confidence":0.9}'); } });
+    const body = JSON.parse(seen.o.body);
+    assert.strictEqual(body.contents[0].parts.length, 1);
+    assert.ok(!('inline_data' in body.contents[0].parts[0]));
+    assert.ok(body.contents[0].parts[0].text.includes('Pucuk merah'));
+    assert.strictEqual(seen.o.headers['x-goog-api-key'], 'KUNCI');
+    assert.ok(!seen.url.includes('KUNCI'));
+    assert.deepStrictEqual([out.fields.scientific, out.fields.category, out.fields.height, out.model], ['Syzygium myrtifolium', 'Semak / pagar', 300, 'm1']);
+  });
+
+  await t('dari nama: nama kosong atau tanpa kunci ditolak sebelum memanggil jaringan; markup dibuang', async () => {
+    let calls = 0; const f = async (u, o) => { calls++; return reply('{"local":"X"}'); };
+    await assert.rejects(() => G.identifyByName('   ', { key: 'k', models: ['a'], fetch: f }), /nama/i);
+    await assert.rejects(() => G.identifyByName('Soka', { key: '', models: ['a'], fetch: f }), /kunci/i);
+    assert.strictEqual(calls, 0);
+    let sent; await G.identifyByName('<script>x</script>Soka', { key: 'k', models: ['a'], fetch: async (u, o) => { sent = o.body; return reply('{"local":"Soka"}'); } });
+    assert.ok(!/<script>/.test(JSON.parse(sent).contents[0].parts[0].text));
+  });
+
+  await t('dari nama: nama yang tidak dikenali (kepercayaan 0) ditolak dengan pesan jelas', async () => {
+    await assert.rejects(() => G.identifyByName('asdfgh', { key: 'k', models: ['a'], fetch: async () => reply('{"local":"","confidence":0}') }), /tidak dikenali|tidak ditemukan/i);
+  });
+
+  await t('dari nama: 503 dicoba ulang dan model berikutnya dipakai seperti identifikasi foto', async () => {
+    const tried = [];
+    const out = await G.identifyByName('Soka', { key: 'k', models: ['a', 'b'], wait: async () => {}, fetch: async url => { tried.push(url.match(/models\/([^:]+)/)[1]); return tried.length <= 2 ? fail(503) : reply('{"local":"Soka"}'); } });
+    assert.deepStrictEqual(tried, ['a', 'a', 'b']);
+    assert.strictEqual(out.model, 'b');
+  });
+
+  // ---------- tes koneksi ----------
+  await t('tes koneksi: berhasil melaporkan model yang dipakai, hanya teks, tanpa memeriksa isi balasan', async () => {
+    let body;
+    const r = await G.test({ key: 'KUNCI', models: ['a', 'b'], fetch: async (u, o) => { body = JSON.parse(o.body); return reply('OK'); } });
+    assert.strictEqual(r.ok, true);
+    assert.strictEqual(r.model, 'a');
+    assert.ok(!('inline_data' in body.contents[0].parts[0]));
+  });
+
+  await t('tes koneksi: model pertama tidak ada (404) maka model kedua dicoba dan dilaporkan', async () => {
+    let n = 0;
+    const r = await G.test({ key: 'k', models: ['a', 'b'], fetch: async () => (++n === 1 ? fail(404) : reply('OK')) });
+    assert.strictEqual(r.model, 'b');
+  });
+
+  await t('tes koneksi: kunci salah, kuota habis, tanpa kunci, dan server sibuk punya pesan sendiri', async () => {
+    await assert.rejects(() => G.test({ key: 'k', models: ['a'], fetch: async () => fail(400, { error: { message: 'API key not valid' } }) }), /kunci/i);
+    await assert.rejects(() => G.test({ key: 'k', models: ['a'], fetch: async () => fail(429) }), /kuota/i);
+    await assert.rejects(() => G.test({ key: '', models: ['a'], fetch: async () => reply('OK') }), /kunci/i);
+    await assert.rejects(() => G.test({ key: 'k', models: ['a'], wait: async () => {}, fetch: async () => fail(503) }), /sibuk/i);
+  });
+
   await t('isi formulir hanya yang masih kosong, tidak menimpa ketikan pengguna', async () => {
     const form = { local: { value: 'Nama saya' }, scientific: { value: '' }, height: { value: '' }, category: { value: 'Rumput' } };
     const n = G.fillEmpty(form, { local: 'Dari AI', scientific: 'Sci', height: 120, category: 'Lainnya', light: 'x' });
     assert.deepStrictEqual([form.local.value, form.scientific.value, form.height.value, form.category.value], ['Nama saya', 'Sci', '120', 'Rumput']);
     assert.strictEqual(n, 2);
+  });
+
+  await t('kolom yang diisi AI ditandai (ai=1) agar bisa diisi ulang nanti', async () => {
+    const form = { local: { value: '', dataset: {} }, height: { value: '', dataset: {} } };
+    G.fillEmpty(form, { local: 'Soka', height: 120 });
+    assert.deepStrictEqual([form.local.dataset.ai, form.height.dataset.ai], ['1', '1']);
+  });
+
+  await t('isi ulang dari nama: kolom hasil AI sebelumnya ditimpa, ketikan pengguna tetap, tanpa opsi tidak ditimpa', async () => {
+    const mk = () => ({ local: { value: 'Ketikan saya', dataset: {} }, scientific: { value: 'Salah dari AI', dataset: { ai: '1' } }, height: { value: '999', dataset: {} } });
+    const a = mk(); const n = G.fillEmpty(a, { local: 'X', scientific: 'Benar', height: 100 }, { replaceAI: true });
+    assert.deepStrictEqual([a.local.value, a.scientific.value, a.height.value, n], ['Ketikan saya', 'Benar', '999', 1]);
+    const b = mk(); G.fillEmpty(b, { scientific: 'Benar' });
+    assert.strictEqual(b.scientific.value, 'Salah dari AI');
+  });
+
+  await t('model bawaan: gemini-3.6-flash lebih dulu, lainnya cadangan', async () => {
+    assert.strictEqual(G.MODELS[0], 'gemini-3.6-flash');
+    assert.ok(G.MODELS.length >= 2);
   });
 
   console.log('gemini-plant OK');

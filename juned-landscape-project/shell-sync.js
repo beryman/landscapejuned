@@ -3,7 +3,7 @@
    Alur tiap putaran: tarik perubahan server -> terapkan -> dorong perubahan lokal.
    Deteksi perubahan memakai hash per data dibanding "base" (kondisi sinkron terakhir). */
 'use strict';
-const SK = { tk: 'tamankerja:v1', tkcfg: 'tk:cfg', pbp: 'plantbase_landscape_v1', pbm: 'plantbase_materials_v18', pbr: 'plantbase_rabs_v18' };
+const SK = { tk: 'tamankerja:v1', tkcfg: 'tk:cfg', pbp: 'plantbase_landscape_v1', pbm: 'plantbase_materials_v18', pbr: 'plantbase_rabs_v18', gem: 'jlp:sync:gemini' };   // gem: awalan jlp:sync: = tidak ikut berkas cadangan (lihat makeBackup)
 const SYNC_COLLS = [
   { c: 'tk:p', key: SK.tk, mod: 'proyek', merge: true, lbl: r => 'Proyek: ' + r.name },
   { c: 'pb:plant', key: SK.pbp, mod: 'tanaman', lbl: r => 'Tanaman: ' + (r.local || r.name) },
@@ -13,7 +13,8 @@ const SYNC_COLLS = [
   // Survei (LANDSPACE): satu kunci KV per proyek dan per foto, supaya mengubah satu proyek tidak menulis ulang semua foto
   { c: 'ls:p', prefix: 'landspace:p:', mod: 'survei', merge: true, lbl: r => 'Survei: ' + r.name },
   { c: 'ls:photo', prefix: 'landspace:photo:', mod: 'survei', lbl: r => 'Foto survei: ' + r.id },
-  { c: 'ls:cfg', key: 'landspace:cfg', single: true, mod: 'survei', lbl: () => 'Pengaturan Survei' }
+  { c: 'ls:cfg', key: 'landspace:cfg', single: true, mod: 'survei', lbl: () => 'Pengaturan Survei' },
+  { c: 'app:gemini', key: SK.gem, single: true, mod: 'tanaman', lbl: () => 'Kunci Gemini' }   // kunci milik pengguna; aman karena RLS per akun, tidak ikut cadangan
   // Koleksi fin:* sengaja tidak lagi ditarik/didorong: baris lamanya tetap utuh di cloud, HP baru tidak menerimanya.
 ];
 const CHUNK = 400000;

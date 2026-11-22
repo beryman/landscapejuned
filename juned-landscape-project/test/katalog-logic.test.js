@@ -121,5 +121,13 @@ const names = r => r.map(x => x.plant.local);
     }
   });
 
+  await t('hasil yang namanya diedit tanpa dicari ulang: hanya nama yang disimpan, data tanaman lama dibuang', async () => {
+    const row = { ok: true, fields: { local: 'Edit', scientific: 'Sci edit', family: 'Salah', category: 'Palem', description: 'Salah', height: 900, crown: 5, spacing: 5, light: 'Teduh', water: 'x', fertilizer: 'y', confidence: 0.9 } };
+    const kept = L.fieldsToSave({ ...row, edited: true });
+    assert.deepStrictEqual([kept.local, kept.scientific, kept.category], ['Edit', 'Sci edit', 'Lainnya']);
+    assert.deepStrictEqual([kept.family, kept.description, kept.height, kept.light, kept.water], ['', '', 0, '', '']);
+    assert.strictEqual(L.fieldsToSave(row), row.fields, 'tidak diedit: apa adanya');
+  });
+
   console.log('katalog-logic OK');
 })().catch(e => { console.error(e); process.exit(1); });

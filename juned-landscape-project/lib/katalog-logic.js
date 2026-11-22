@@ -70,6 +70,12 @@
     };
   }
 
+  // Nama diedit tetapi data lain belum dicari ulang dari nama: data lama milik tanaman yang salah dikenali, jadi dibuang.
+  function fieldsToSave(row) {
+    if (!row.edited) return row.fields;
+    return { local: row.fields.local, scientific: row.fields.scientific, family: '', category: 'Lainnya', description: '', height: 0, crown: 0, spacing: 0, light: '', water: '', fertilizer: '', confidence: null };
+  }
+
   // Berurutan (bukan paralel) agar tidak menabrak batas permintaan per menit kunci gratis.
   async function identifyBatch(items, identify, { onProgress } = {}) {
     const out = []; let stopReason = '';
@@ -86,5 +92,5 @@
     return out;
   }
 
-  root.KatalogLogic = { recommend, clientCatalogHTML, isDuplicate, plantFromAI, identifyBatch };
+  root.KatalogLogic = { recommend, clientCatalogHTML, isDuplicate, plantFromAI, identifyBatch, fieldsToSave };
 })(typeof window !== 'undefined' ? window : globalThis);
