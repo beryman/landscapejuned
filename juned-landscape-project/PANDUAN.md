@@ -21,7 +21,7 @@ Aplikasi untuk memantau proyek lanskap dari **Survei, Penawaran, RAB, Opname, sa
 - **Revisi penawaran.** Tiap *Tandai terkirim* menjadi R1, R2, dan seterusnya. Mengubah nilai setelah terkirim memunculkan *Kirim ulang sebagai R2*, dan penawaran tidak bisa disetujui sebelum itu.
 - **Peringatan survei berubah.** Kalau total survei bergeser setelah RAB dibuat, muncul peringatan di atas tab proyek. Di tab *Tambah Kurang* pilih *Catat selisih sebagai tambah/kurang* atau abaikan.
 - **Tambah Kurang.** Perubahan di tengah proyek dicatat terpisah dari penawaran awal. Yang disetujui masuk RAB (jadi ikut opname dan tagihan), dan *Nilai kontrak terkini* tampil di atas proyek.
-- **Survei batu alam dan cat tekstur.** Saat membuat survei, pilih *Batu alam* atau *Cat tekstur*. Material dan item RAB langsung disiapkan dan aktif di semua bidang. Di lembar survei, halaman Material punya tombol *Paket material* untuk menambahkannya kemudian. Angka kebutuhan per m² (perekat 5 kg, nat 0,5 kg, sealer 0,3 liter; plamir 0,6 kg, cat dasar 0,1 liter, cat tekstur 1,2 kg, coating 0,1 liter) adalah perkiraan umum. **Sesuaikan dengan data produk dan hasil contoh di lapangan.**
+- **Survei batu alam dan cat tekstur.** Saat membuat survei, pilih *Batu alam* atau *Cat tekstur*. Material dan item RAB langsung disiapkan dan aktif di semua bidang. Di lembar survei, menu *Material* punya tombol *Tambah material* untuk menambahkannya kemudian. Angka kebutuhan per m² (perekat 5 kg, nat 0,5 kg, sealer 0,3 liter; plamir 0,6 kg, cat dasar 0,1 liter, cat tekstur 1,2 kg, coating 0,1 liter) adalah perkiraan umum. **Sesuaikan dengan data produk dan hasil contoh di lapangan.**
 - **Isi harga dari katalog.** Di tab Survei, tombol itu mengisi harga item yang namanya cocok dengan katalog Tanaman. Item yang ragu atau namanya terlalu umum dilewati, dan harga yang sudah terisi tidak diubah.
 - **Paket pekerjaan.** Di tab Papan, satu ketukan mengisi tugas dari template beberapa jenis pekerjaan (misalnya taman + kolam).
 - **Laporan cepat.** Di tab Laporan: foto, catatan, dan volume dalam satu langkah. Volume otomatis masuk opname.
@@ -44,6 +44,12 @@ Aplikasi untuk memantau proyek lanskap dari **Survei, Penawaran, RAB, Opname, sa
 - **Kunci Gemini ikut sinkron.** Isi sekali di Katalog › Pengaturan & Backup; perangkat lain yang login ke akun yang sama ikut memakainya (lihat **SINKRON.md** untuk catatan keamanan). Kunci lama yang hanya ada di satu perangkat dipindahkan otomatis. Kunci tidak masuk file cadangan.
 - **Tes koneksi.** Tombol di panel Gemini memeriksa kunci dan menyebut model mana yang bekerja, atau alasan gagalnya (kunci salah, kuota habis, server sibuk).
 - **Model bawaan** sekarang `gemini-3.6-flash`, dengan `gemini-3.5-flash` dan `gemini-3.5-flash-lite` sebagai cadangan.
+
+**Fitur tambahan (versi 1.11.0)** — lembar Survei
+- **Kalkulasi dan Material jadi dua menu.** Di bilah atas lembar survei sekarang ada Daftar, Foto, Kalkulasi, Material, RAB, dan Ekspor. Tab Material yang dulu di dalam Pengukuran sudah tidak ada.
+- **Material sesuai jenis proyek.** Proyek taman hanya menampilkan material taman, proyek batu alam hanya material batu alam, dan proyek cat tekstur hanya material cat tekstur, baik di menu Material, tabel Kalkulasi, maupun panel bidang. Material jenis lain tidak dihapus, hanya disembunyikan, dan ada catatan jumlahnya. Material yang sudah dipakai suatu bidang tetap tampil agar tidak ada volume yang tersembunyi.
+- **Tambah material untuk kebutuhan lain.** Tombol *Tambah material* menawarkan paket jenis lain (misalnya paket Taman untuk proyek batu alam) dan *Material buatan sendiri*. Yang ditambahkan tetap tampil di proyek itu. Bila proyek belum punya material jenisnya sendiri, ada tombol untuk menambahkannya.
+- **Tampilan desktop dirapikan.** Menu atas berupa deretan tab teks yang rata kiri (bukan bilah HP yang direntangkan), isi halaman sejajar dengan tab, header tabel Kalkulasi terang, dan pesan "belum ada bidang" tidak lagi terpotong. Warna disamakan dengan aplikasi utama (krem, hijau tua, satu aksen emas), ikon hiasan pada kartu angka dan kartu proyek dihapus, dan pemisah titik tengah diganti koma.
 
 Tahap proyek dihitung otomatis dari data ini. Saran pengembangan ada di **SARAN-PENGEMBANGAN.md**.
 
