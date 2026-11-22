@@ -22,8 +22,9 @@ async function renderHome() {
 
   const dateLong = new Date().toLocaleDateString('id-ID', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' });
   let h = '<div class="ph"><div><div class="eyebrow">' + esc(dateLong) + '</div><h1>' + greeting() + '</h1><p>Ringkasan proyek, keuangan, dan stok tanaman Anda.</p></div>' +
-    '<div class="row"><span class="pill off" ' + (navigator.onLine ? 'hidden' : '') + '>Offline</span><button type="button" class="btn ghost sm" ' + act(() => renderHome()) + '>↻ Segarkan</button></div></div>';
+    '<div class="row">' + syncPillHTML() + '<span class="pill off" ' + (navigator.onLine ? 'hidden' : '') + '>Offline</span><button type="button" class="btn ghost sm" ' + act(() => renderHome()) + '>↻ Segarkan</button></div></div>';
 
+  h += cloudBannerHTML();
   // banner cadangan
   const lb = await lastBackupDate();
   const hasData = hasTK || pb.plants.length > 1 || (fin && !fin.locked && !fin.error && fin.txs && fin.txs.length);
@@ -87,7 +88,7 @@ async function renderHome() {
       (run.map(p => '<button type="button" class="card pj" ' + act(() => go('proyek', w => w.JLP.openProject(p.id, 'board'))) + '><div class="top"><div><h3>' + esc(p.name) + '</h3><small>' + esc(p.client || 'Tanpa klien') + ' · ' + p.tasks + ' tugas</small></div><b>' + p.pct + '%</b></div><div class="bar"><i style="width:' + p.pct + '%"></i></div><small style="display:block;margin-top:7px">RAB ' + rpc(p.rab) + ' · Diterima ' + rpc(p.op) + '</small></button>').join('') || '<div class="card empty" style="grid-column:1/-1">Semua proyek selesai 🎉</div>') + '</div>' +
       (done ? '<div class="small" style="margin-top:8px">' + done + ' proyek sudah selesai 100%.</div>' : '');
   }
-  body.innerHTML = h;
+  body.innerHTML = h; bindBanners();
   body.onclick = e => { const b = e.target.closest('[data-a]'); if (b && homeActs[+b.dataset.a]) homeActs[+b.dataset.a](); };
 }
 
@@ -146,16 +147,17 @@ async function renderSettings() {
   try { persisted = (await navigator.storage.persisted()) ? 'Ya' : 'Belum'; } catch (_) {}
   const inst = JLP.isStandalone();
   body.innerHTML = '<div class="ph"><div><h1>Pengaturan</h1><p>Juned Landscape Project · versi ' + APP_VERSION + '</p></div></div>' +
-    '<div class="split">' +
+    '<div class="split">' + syncCardHTML() + odCardHTML() +
     '<div class="card"><h3>Pasang aplikasi</h3><p class="small">' + (inst ? '✅ Aplikasi berjalan sebagai aplikasi terpasang.' : 'Pasang agar muncul di layar utama / Dock, tampil layar penuh, dan bisa dipakai offline.') + '</p>' + (inst ? '' : '<div class="row"><button type="button" class="btn" id="stInstall">⬇️ ' + (state.deferredPrompt ? 'Pasang sekarang' : 'Lihat cara memasang') + '</button></div>' + (state.deferredPrompt ? '' : installHelpHTML())) + '</div>' +
     '<div class="card"><h3>Cadangan &amp; pemulihan</h3><p class="small">Satu file mencakup semua modul: proyek, tanaman/material/RAB, dan keuangan (termasuk foto nota).<br>Cadangan terakhir: <b>' + (lb ? lb.toLocaleDateString('id-ID', { day: 'numeric', month: 'long', year: 'numeric' }) : 'belum pernah') + '</b></p>' +
-    '<div class="row"><button type="button" class="btn" id="stBackup">⬇️ Unduh cadangan</button><label class="btn ghost" style="cursor:pointer">⬆️ Pulihkan dari file<input type="file" id="stRestore" accept=".json,.txt,application/json,text/plain" hidden></label></div>' +
+    '<div class="row"><button type="button" class="btn" id="stBackup">⬇️ Unduh cadangan</button><label class="btn ghost" style="cursor:pointer">⬆️ Pulihkan dari file<input type="file" id="stRestore" accept=".json,.txt,.gz,application/json,application/gzip,text/plain" hidden></label></div>' +
     '<p class="small" style="margin-bottom:0">Bisa juga memulihkan file cadangan dari aplikasi lama (Taman Kerja, PlantBase, Sepran): format dikenali otomatis dan hanya menggantikan modul terkait.</p></div>' +
     '<div class="card"><h3>Penyimpanan</h3><div class="kv" style="margin:8px 0"><span>Terpakai</span><b>' + esc(usage) + '</b><span>Penyimpanan permanen</span><b>' + persisted + '</b></div><div class="row"><button type="button" class="btn ghost sm" id="stPersist">Minta penyimpanan permanen</button></div><p class="small" style="margin-bottom:0">Data hanya ada di perangkat ini. iPhone/iPad: pasang ke layar utama agar Safari tidak membersihkan data yang lama tidak dibuka. Untuk berpindah perangkat, gunakan cadangan.</p></div>' +
     '<div class="card"><h3>Pembaruan aplikasi</h3><p class="small">Versi terpasang: <b>' + APP_VERSION + '</b>. Pembaruan diunduh otomatis saat online.</p><div class="row"><button type="button" class="btn ghost sm" id="stUpdate">Periksa pembaruan</button><button type="button" class="btn ghost sm" id="stRefresh">Segarkan &amp; bersihkan cache</button></div><p class="small" style="margin-bottom:0">Membersihkan cache tidak menghapus data Anda.</p></div>' +
     '<div class="card"><h3>Hapus semua data</h3><p class="small">Menghapus seluruh data proyek, tanaman, dan keuangan di perangkat ini. Buat cadangan lebih dulu.</p><button type="button" class="btn danger sm" id="stReset">Hapus semua data…</button></div>' +
     '<div class="card"><h3>Tentang</h3><p class="small" style="margin-bottom:0">Juned Landscape Project menyatukan tiga aplikasi: <b>Proyek</b> (Taman Kerja), <b>Tanaman</b> (PlantBase V1.8.4), dan <b>Keuangan</b> (Sepran Personal V4.6.1), lengkap dengan jembatan data di antaranya. Semua data tersimpan lokal; tidak ada server.</p></div>' +
     '</div>';
+  bindSyncCard(); bindOdCard(); bindSpaceBlock(); loadSpaceBox();
   const on = (id, fn) => { const el = $('#' + id); if (el) el.onclick = fn; };
   on('stInstall', () => doInstall());
   on('stBackup', () => makeBackupDownload());

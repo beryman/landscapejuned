@@ -55,8 +55,8 @@
 
   KV.ls = {
     getItem: function (k) { return cache.has(k) ? cache.get(k) : null; },
-    setItem: function (k, v) { v = String(v); cache.set(k, v); idbPut(k, v); },
-    removeItem: function (k) { cache.delete(k); idbDel(k); }
+    setItem: function (k, v) { v = String(v); cache.set(k, v); idbPut(k, v); if (KV.onWrite) { try { KV.onWrite(k); } catch (_) {} } },
+    removeItem: function (k) { cache.delete(k); idbDel(k); if (KV.onWrite) { try { KV.onWrite(k); } catch (_) {} } }
   };
 
   // ---- API tulis/baca langsung (selalu lewat IndexedDB, bukan cache) ----
@@ -73,6 +73,20 @@
   KV.set = function (k, v) { v = String(v); cache.set(k, v); return idbPut(k, v); };
   KV.del = function (k) { cache.delete(k); return idbDel(k); };
   KV.entries = function () { return KV.flush().then(function () { return db ? readAll() : (function () { var o = {}; cache.forEach(function (v, k) { o[k] = v; }); return o; })(); }); };
+  // Kunci berawalan p dari cache (sinkron), dan nilai berawalan p langsung dari IndexedDB lewat
+  // rentang kunci (tanpa membaca data lain, penting agar foto Survei tidak ikut terbaca).
+  KV.keys = function (p) { var o = []; cache.forEach(function (v, k) { if (k.indexOf(p) === 0) o.push(k); }); return o; };
+  KV.prefix = function (p) {
+    return KV.flush().then(function () {
+      if (!db) { var m = {}; cache.forEach(function (v, k) { if (k.indexOf(p) === 0) m[k] = v; }); return m; }
+      return new Promise(function (res, rej) {
+        var out = {}, t = db.transaction(ST, 'readonly'), c = t.objectStore(ST).openCursor(IDBKeyRange.bound(p, p + '\uffff'));
+        c.onsuccess = function () { var cur = c.result; if (cur) { out[cur.key] = cur.value; cur.continue(); } };
+        t.oncomplete = function () { res(out); };
+        t.onerror = t.onabort = function () { rej(t.error); };
+      });
+    });
+  };
   KV.replaceAll = function (obj) {
     cache.clear();
     Object.keys(obj).forEach(function (k) { cache.set(k, String(obj[k])); });

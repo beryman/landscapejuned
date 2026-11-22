@@ -1,10 +1,10 @@
 /* Juned Landscape Project - service worker (offline + pembaruan terkontrol) */
-const VERSION = '1.0.2';
+const VERSION = '1.3.0';
 const CACHE = 'jlp-' + VERSION;
 const RUNTIME = 'jlp-runtime';
 const CORE = [
   './', 'index.html', 'manifest.webmanifest',
-  'shell.css', 'shell-core.js', 'shell-pages.js', 'shell-bridge.js',
+  'shell.css', 'shell-core.js', 'shell-pages.js', 'shell-bridge.js', 'shell-sync.js', 'shell-onedrive.js', 'shell-space.js',
   'lib/kv.js', 'lib/common.js', 'lib/embed.css', 'lib/xlsx.full.min.js',
   'apps/proyek.html', 'apps/tanaman.html', 'apps/keuangan.html',
   'icons/icon-192.png', 'icons/icon-512.png', 'icons/icon-maskable-512.png',

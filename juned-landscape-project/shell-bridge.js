@@ -144,6 +144,7 @@ async function syncFinance({ projectId } = {}) {
     });
     if (add.length && wallet) await KV.set('jlp:cfg', JSON.stringify({ ...cfg, finWallet: wallet }));
     const w = frameWin('keuangan'); if (w && w.render) { try { w.render(); } catch (_) {} }
+    syncKick(1500);
     toast('Tersinkron: ' + add.length + ' baru, ' + upd.length + ' diperbarui, ' + del.length + ' dihapus');
     return { add: add.length, upd: upd.length, del: del.length };
   } catch (e) { console.error(e); toast('Sinkron gagal: ' + (e && e.message || 'kesalahan')); return null; }
@@ -157,7 +158,7 @@ async function makeBackup() {
   await flushAll();
   const kv = await KV.entries();
   delete kv['__migrated_ls'];
-  Object.keys(kv).forEach(k => { if (k.indexOf('jlp:summary:') === 0) delete kv[k]; });
+  Object.keys(kv).forEach(k => { if (k.indexOf('jlp:summary:') === 0 || k.indexOf('jlp:sync:') === 0) delete kv[k]; });
   const sepran = {};
   for (const s of FIN_STORES) {
     let rows = await finAll(s);
@@ -202,14 +203,15 @@ async function finReplace(rows) {
 async function restoreFromFile(file) {
   try {
     if (file.size > 300 * 1048576) throw new Error('file lebih dari 300 MB');
-    const data = JSON.parse(await file.text()), kind = detectBackup(data);
+    const data = await readBackupJSON(file), kind = detectBackup(data);
     if (!kind) { toast('Format file cadangan tidak dikenali'); return; }
     const label = { all: 'SEMUA data (proyek, tanaman, keuangan)', sepran: 'data KEUANGAN (cadangan Sepran lama)', proyek: 'data PROYEK (cadangan Taman Kerja lama)', plantbase: 'data TANAMAN (cadangan PlantBase lama)' }[kind];
     if (!await confirmBox('Pulihkan ' + label + ' dari file “' + file.name + '”?\n\nData yang ada pada bagian tersebut akan DIGANTI. Disarankan membuat cadangan terlebih dahulu.', { title: 'Pulihkan cadangan', ok: 'Ganti data', danger: true })) return;
     await flushAll();
     if (kind === 'all') {
       Object.keys(MODS).forEach(unloadFrame);
-      const kv = { ...data.kv, '__migrated_ls': '1' }; await KV.replaceAll(kv); await finReplace(data.sepran);
+      const keep = {}; for (const k of ['jlp:sync:state', 'jlp:sync:conflicts']) { const v = await KV.get(k); if (v) keep[k] = v; }
+      const kv = { ...data.kv, ...keep, '__migrated_ls': '1' }; await KV.replaceAll(kv); await finReplace(data.sepran);
     } else if (kind === 'sepran') {
       unloadFrame('keuangan');
       await finReplace({ wallets: data.wallets, txs: data.txs, debts: data.debts, budgets: data.budgets, receipts: data.receipts, categories: data.categories, recurring: data.recurring, settings: data.settings });
@@ -225,7 +227,7 @@ async function restoreFromFile(file) {
       await KV.set('plantbase_material_migration_v182', '1'); await KV.set('plantbase_material_seeded_v181', '1');
     }
     state.finUnlocked = false; state.sumTried = false;
-    toast('Pemulihan berhasil', { ms: 3500 });
+    toast('Pemulihan berhasil', { ms: 3500 }); syncKick(1500);
     setView(kind === 'all' ? 'home' : state.view);
     if (kind !== 'all' && ['home', 'setelan', 'terpadu'].includes(state.view)) setView(state.view);
   } catch (e) { console.error(e); toast('Pemulihan gagal: ' + (e && e.message || 'file tidak valid'), { ms: 5000 }); }
@@ -238,6 +240,7 @@ async function resetAll() {
     foot: [{ label: 'Batal', cls: 'ghost' }, { label: 'Hapus semua', cls: 'danger', onClick: async () => {
       if ($('#rstTxt').value.trim().toUpperCase() !== 'HAPUS') { toast('Ketik HAPUS untuk melanjutkan'); return false; }
       Object.keys(MODS).forEach(unloadFrame);
+      LS.set('jlp_sync_on', '0'); clearInterval(sync.timer);   // reset = hanya perangkat ini; data cloud tidak dihapus
       await KV.replaceAll({ '__migrated_ls': '1' });
       await finTx(FIN_STORES, t => FIN_STORES.forEach(n => t.objectStore(n).clear()));
       try { localStorage.removeItem('sepran_pin_guard'); } catch (_) {}
@@ -252,20 +255,28 @@ window.JLPShell = {
   moduleReady(win) { Object.keys(MODS).forEach(n => { const m = MODS[n]; if (m.frame && m.frame.contentWindow === win && m.resolve) m.resolve(win); }); },
   setFinLocked(l) { state.finUnlocked = !l; if (l) state.pinSet = true; },
   async listProjects() { await flushFrame('proyek'); const p = await kvJSON('tamankerja:v1', []); return (Array.isArray(p) ? p : []).map(x => ({ id: x.id, name: x.name, par: x.par || 0 })); },
+  localChanged(k) { if (k === 'fin' || Object.values(SK).includes(k) || String(k).indexOf('landspace:') === 0) syncKick(4000); },
   pickCatalog, syncFinance, go, toast
 };
 
-(async function boot() {
+async function boot() {
   buildNav();
   await KV.ready;
   if (KV.usingMemory) toast('Penyimpanan browser diblokir (mode privat?). Data tidak akan tersimpan.', { ms: 9000 });
   registerSW();
   updateInstallUI();
+  syncLoadCfg(); syncCheckSetupLink();
+  await odHandleRedirect();
   state.view = null;
   setView(parseHash(), true);
+  syncStart();
+  setSyncStatus(sync.status);
+  odKick(10000);
   addEventListener('online', () => { if (state.view === 'home') renderHome(); });
   addEventListener('offline', () => { if (state.view === 'home') renderHome(); });
   try { if (navigator.storage && navigator.storage.persist) navigator.storage.persist(); } catch (_) {}
   // muat modul Proyek di latar agar ringkasan Beranda selalu segar
   setTimeout(() => { if (!MODS.proyek.promise) loadFrame('proyek'); }, 2500);
-})();
+}
+if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', boot); else boot();
+

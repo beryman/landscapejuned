@@ -1,6 +1,6 @@
 /* Juned Landscape Project - shell: utilitas, penyimpanan, navigasi, iframe modul, PWA */
 'use strict';
-const APP_VERSION = '1.0.2';
+const APP_VERSION = '1.3.0';
 const $ = (s, r = document) => r.querySelector(s);
 const $$ = (s, r = document) => Array.from(r.querySelectorAll(s));
 const esc = s => String(s == null ? '' : s).replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
@@ -22,14 +22,16 @@ const IC = {
   home: '<svg viewBox="0 0 24 24"><path d="M3 11.5 12 4l9 7.5"/><path d="M5.5 10v9.5h13V10"/><path d="M10 19.5v-5h4v5"/></svg>',
   proyek: '<svg viewBox="0 0 24 24"><rect x="5" y="4.5" width="14" height="16.5" rx="2"/><path d="M9 4.5V3h6v1.5"/><path d="m9 13 2 2 4-4.5"/></svg>',
   tanaman: '<svg viewBox="0 0 24 24"><path d="M12 21v-8"/><path d="M12 13c0-4-3-6.5-7.5-6.5C4.5 10.5 7.5 13 12 13Z"/><path d="M12 11c0-3.5 2.5-6 7-6 0 4-2.5 6-7 6Z"/></svg>',
+  survei: '<svg viewBox="0 0 24 24"><rect x="3.5" y="3.5" width="17" height="17" rx="2.5"/><path d="M3.5 9.5h17M9.5 3.5v17" opacity=".45"/><path d="m8 16 2.5-3 2 2 3.5-5"/></svg>',
   keuangan: '<svg viewBox="0 0 24 24"><path d="M4 7.5A2.5 2.5 0 0 1 6.5 5H18v3"/><rect x="3.5" y="7.5" width="17" height="12" rx="2.5"/><circle cx="16.5" cy="13.5" r="1.2"/></svg>',
   terpadu: '<svg viewBox="0 0 24 24"><path d="M5 19v-6"/><path d="M12 19V6"/><path d="M19 19v-9"/><path d="M3 20.5h18"/></svg>',
   setelan: '<svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><path d="M12 2.8v2.4M12 18.8v2.4M2.8 12h2.4M18.8 12h2.4M5.5 5.5l1.7 1.7M16.8 16.8l1.7 1.7M5.5 18.5l1.7-1.7M16.8 7.2l1.7-1.7"/></svg>',
   more: '<svg viewBox="0 0 24 24"><circle cx="5.5" cy="12" r="1.4"/><circle cx="12" cy="12" r="1.4"/><circle cx="18.5" cy="12" r="1.4"/></svg>',
+  cloud: '<svg viewBox="0 0 24 24"><path d="M7 18.5h10a4 4 0 0 0 .6-7.95A5.5 5.5 0 0 0 7.2 9.4 4.6 4.6 0 0 0 7 18.5Z"/></svg>',
   install: '<svg viewBox="0 0 24 24"><path d="M12 3.5v11"/><path d="m7.5 10.5 4.5 4.5 4.5-4.5"/><path d="M4.5 19.5h15"/></svg>'
 };
 const NAV = [
-  { id: 'home', label: 'Beranda' }, { id: 'proyek', label: 'Proyek' }, { id: 'tanaman', label: 'Tanaman' },
+  { id: 'home', label: 'Beranda' }, { id: 'proyek', label: 'Proyek' }, { id: 'survei', label: 'Survei' }, { id: 'tanaman', label: 'Tanaman' },
   { id: 'keuangan', label: 'Keuangan' }, { id: 'terpadu', label: 'Terpadu' }, { id: 'setelan', label: 'Pengaturan' }
 ];
 const VIEWS = NAV.map(n => n.id);
@@ -167,6 +169,7 @@ async function readFin() {
 const state = { view: 'home', finUnlocked: false, deferredPrompt: null, swReg: null, pinSet: null };
 const MODS = {
   proyek: { src: 'apps/proyek.html?embed=1', title: 'Proyek', frame: null, promise: null, resolve: null },
+  survei: { src: 'apps/survei/index.html?embed=1', title: 'Survei Lapangan', frame: null, promise: null, resolve: null },
   tanaman: { src: 'apps/tanaman.html?embed=1', title: 'Tanaman dan Material', frame: null, promise: null, resolve: null },
   keuangan: { src: 'apps/keuangan.html?embed=1', title: 'Keuangan', frame: null, promise: null, resolve: null }
 };
@@ -178,7 +181,7 @@ function loadFrame(name) {
   f.setAttribute('allow', 'clipboard-write; web-share; fullscreen');
   m.frame = f;
   m.promise = new Promise(res => { m.resolve = res; });
-  f.addEventListener('load', () => setTimeout(() => m.resolve(f.contentWindow), 5000)); // cadangan bila modul tak memanggil markReady
+  f.addEventListener('load', () => setTimeout(() => { if (m.frame === f && m.resolve) m.resolve(f.contentWindow); }, 5000)); // cadangan bila modul tak memanggil markReady
   f.src = m.src;
   if (state.view === name) f.classList.add('on');
   $('#stage').appendChild(f);
@@ -212,6 +215,7 @@ function setView(name, replace) {
   $$('#stage > .view').forEach(v => v.classList.toggle('on', v.id === 'v-' + name));
   updateNav();
   if (prev !== name && MODS[prev]) flushFrame(prev);
+  if (prev !== name && typeof syncOnViewChange === 'function') syncOnViewChange(prev);
   if (name === 'home') renderHome();
   else if (name === 'terpadu') renderTerpadu();
   else if (name === 'setelan') renderSettings();
@@ -226,9 +230,10 @@ function go(name, fn) {
 }
 function buildNav() {
   $('#railNav').innerHTML = NAV.map(n => '<button type="button" class="nb" data-v="' + n.id + '">' + IC[n.id] + '<span>' + n.label + '</span></button>').join('');
-  $('#tabbar').innerHTML = NAV.slice(0, 4).map(n => '<button type="button" class="nb" data-v="' + n.id + '">' + IC[n.id] + '<span>' + n.label + '</span></button>').join('') +
+  $('#tabbar').innerHTML = NAV.slice(0, 5).map(n => '<button type="button" class="nb" data-v="' + n.id + '">' + IC[n.id] + '<span>' + n.label + '</span></button>').join('') +
     '<button type="button" class="nb" data-v="more">' + IC.more + '<span>Lainnya</span></button>';
   $('#railInstall').innerHTML = IC.install + '<span>Pasang</span>';
+  $('#railSync').innerHTML = IC.cloud + '<span>Sinkron</span>'; $('#railSync').onclick = () => setView('setelan');
   document.addEventListener('click', e => {
     const b = e.target.closest('.nb[data-v]'); if (!b) return;
     if (b.dataset.v === 'more') moreSheet(); else setView(b.dataset.v);

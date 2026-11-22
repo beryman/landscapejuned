@@ -47,6 +47,20 @@
     try { var sh = JLP.shell(); if (sh && sh.moduleReady) sh.moduleReady(window); } catch (_) {}
   };
 
+
+  // Beritahu shell bila data berubah (untuk sinkron antar perangkat)
+  (function () {
+    if (!JLP.embed) return;
+    function sig(k) { try { var sh = JLP.shell(); if (sh && sh.localChanged) sh.localChanged(k); } catch (_) {} }
+    if (window.KV) KV.onWrite = function (k) { sig(k); };
+    if (window.IDBObjectStore) {
+      ['put', 'add', 'delete', 'clear'].forEach(function (m) {
+        var o = IDBObjectStore.prototype[m];
+        IDBObjectStore.prototype[m] = function () { if (this.name !== 'kv' && this.name !== 'settings') sig('fin'); return o.apply(this, arguments); };
+      });
+    }
+  })();
+
   document.addEventListener('visibilitychange', function () { if (document.hidden) JLP.flush(); });
   window.addEventListener('pagehide', function () { JLP.flush(); });
 })();
