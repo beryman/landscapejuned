@@ -54,6 +54,9 @@ Aplikasi untuk memantau proyek lanskap dari **Survei, Penawaran, RAB, Opname, sa
 **Fitur tambahan (versi 1.12.0)** — Login
 - **Layar login di awal aplikasi.** Masuk sekali per perangkat dengan akun yang sama, lalu data turun otomatis. *Pakai tanpa login* tetap tersedia. Lihat **SINKRON.md**.
 
+**Perbaikan tampilan HP (versi 1.12.1)** — lembar Survei
+- Di layar HP (lebar di bawah 600 px) huruf sedikit dikecilkan, kontrol dipadatkan, dan bilah menu atas dipendekkan dari 80 ke 58 px. Ruang isi bertambah dan ukurannya sepadan dengan tab lain. Kolom isian tetap 16 px agar iPhone tidak memperbesar halaman sendiri saat mengetik. Tampilan desktop tidak berubah.
+
 Tahap proyek dihitung otomatis dari data ini. Saran pengembangan ada di **SARAN-PENGEMBANGAN.md**.
 
 **Keuangan sudah dilepas sejak versi 1.4.0.** Data keuangan lama tidak dihapus: tetap ada di perangkat, ikut file cadangan, dan tetap ada di Supabase.
