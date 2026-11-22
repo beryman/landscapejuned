@@ -49,7 +49,7 @@
     if (!m) throw new Error('Foto belum siap. Pilih foto tanaman dulu.');
     const body = JSON.stringify({
       contents: [{ parts: [{ text: PROMPT }, { inline_data: { mime_type: m[1], data: m[2] } }] }],
-      generationConfig: { responseMimeType: 'application/json', temperature: 0.2 }
+      generationConfig: { responseMimeType: 'application/json' }   // jangan kirim temperature/top_p: model baru menolak parameter sampling (400)
     });
     let last;
     for (const model of models) {

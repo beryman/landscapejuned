@@ -1,5 +1,5 @@
 /* Juned Landscape Project - service worker (offline + pembaruan terkontrol) */
-const VERSION = '1.8.0';
+const VERSION = '1.8.1';
 const CACHE = 'jlp-' + VERSION;
 const RUNTIME = 'jlp-runtime';
 // Naikkan HANYA saat apps/survei dibangun ulang: bundelnya besar dan berkasnya harus dari build yang sama.

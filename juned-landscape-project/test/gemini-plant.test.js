@@ -18,6 +18,7 @@ const PNG = 'data:image/jpeg;base64,/9j/AAAA';
     assert.strictEqual(body.contents[0].parts[1].inline_data.mime_type, 'image/jpeg');
     assert.strictEqual(body.contents[0].parts[1].inline_data.data, '/9j/AAAA');
     assert.strictEqual(body.generationConfig.responseMimeType, 'application/json');
+    assert.ok(!('temperature' in body.generationConfig), 'model baru menolak parameter sampling');
   });
 
   await t('hasil dinormalkan: angka wajar, kategori dan cahaya dicocokkan ke pilihan formulir', async () => {

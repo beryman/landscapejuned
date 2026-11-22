@@ -9,7 +9,9 @@ Cadangan lengkap, termasuk foto asli, disimpan di **folder tersembunyi milik apl
 3. **APIs & Services › OAuth consent screen** (atau *Google Auth Platform*):
    - Jenis pengguna: **External**.
    - Isi nama aplikasi dan email Anda.
-   - Pada *Audience*, pilih **Publish app** (In production). Izin `drive.appdata` bukan izin sensitif, jadi tidak perlu verifikasi Google. Bila dibiarkan *Testing*, tambahkan email yang akan dipakai sebagai **Test users**.
+   - **Publish app tidak wajib.** Cara paling mudah: biarkan status *Testing*, lalu di *Audience* › **Test users** › **Add users**, isi email Google yang akan dipakai untuk cadangan (maksimal 100). Hanya email itu yang bisa masuk, dan itu cukup.
+   - Saat pertama masuk, Google menampilkan "Google hasn't verified this app". Klik **Advanced › Go to … (unsafe)**. Ini aman karena aplikasinya milik Anda sendiri.
+   - Tombol *Publish app* sering tidak aktif bila *Branding* belum lengkap (nama aplikasi, email dukungan, dan email kontak developer) atau jenis pengguna belum dipilih. Akun Google Workspace hanya bisa memilih *Internal*, yang juga tidak memakai tombol itu.
 4. **APIs & Services › Credentials › Create credentials › OAuth client ID**:
    - Application type: **Web application**.
    - **Authorized JavaScript origins**: tambahkan alamat aplikasi, misalnya `https://landscapejuned-juned-landscape-proj.vercel.app` (tanpa garis miring di akhir). Untuk uji lokal tambahkan juga `http://localhost:8080`.
