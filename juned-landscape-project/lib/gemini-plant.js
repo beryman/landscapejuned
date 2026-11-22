@@ -37,7 +37,7 @@
 
   function httpError(status, body) {
     const msg = String(body && body.error && body.error.message || '');
-    if (status === 429) return new Error('Kuota atau batas permintaan Gemini habis. Tunggu sebentar atau cek kuota kunci Anda.');
+    if (status === 429) { const e = new Error('Kuota atau batas permintaan Gemini habis. Tunggu sebentar atau cek kuota kunci Anda.'); e.quota = true; return e; }
     if (status === 401 || status === 403 || (status === 400 && /api key|permission/i.test(msg))) { const e = new Error('Kunci Gemini tidak valid atau tidak punya izin. Periksa kunci di Pengaturan.'); e.fatal = true; return e; }
     if (status === 400) return new Error('Gemini menolak foto atau permintaan ini' + (msg ? ': ' + msg.slice(0, 120) : '') + '.');
     if (status === 500 || status === 503) return new Error('Server Gemini sedang sibuk (kode ' + status + '). Tunggu semenit lalu coba lagi.');

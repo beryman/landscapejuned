@@ -1,5 +1,5 @@
 /* Juned Landscape Project - service worker (offline + pembaruan terkontrol) */
-const VERSION = '1.8.2';
+const VERSION = '1.9.0';
 const CACHE = 'jlp-' + VERSION;
 const RUNTIME = 'jlp-runtime';
 // Naikkan HANYA saat apps/survei dibangun ulang: bundelnya besar dan berkasnya harus dari build yang sama.
@@ -7,7 +7,7 @@ const SURVEI = 'jlp-survei-4';
 const CORE = [
   './', 'index.html', 'config.js', 'manifest.webmanifest',
   'shell.css', 'shell-core.js', 'shell-pages.js', 'shell-bridge.js', 'shell-sync.js', 'shell-onedrive.js', 'shell-gdrive.js', 'shell-space.js',
-  'lib/kv.js', 'lib/common.js', 'lib/survei-calc.js', 'lib/sync-merge.js', 'lib/proyek-logic.js', 'lib/gemini-plant.js', 'lib/gdrive-backup.js', 'lib/embed.css', 'lib/xlsx.full.min.js',
+  'lib/kv.js', 'lib/common.js', 'lib/survei-calc.js', 'lib/sync-merge.js', 'lib/proyek-logic.js', 'lib/gemini-plant.js', 'lib/katalog-logic.js', 'lib/gdrive-backup.js', 'lib/embed.css', 'lib/xlsx.full.min.js',
   'apps/proyek.html', 'apps/tanaman.html',
   'icons/icon-192.png', 'icons/icon-512.png', 'icons/icon-maskable-512.png',
   'icons/apple-touch-icon.png', 'icons/favicon-32.png', 'icons/logo-96.png'

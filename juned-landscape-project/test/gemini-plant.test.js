@@ -83,6 +83,10 @@ const PNG = 'data:image/jpeg;base64,/9j/AAAA';
     await assert.rejects(() => G.identify(PNG, { key: 'k', models: ['a'], fetch: async () => { throw new TypeError('Failed to fetch'); } }), /internet|jaringan/i);
   });
 
+  await t('kuota habis menandai galat (quota) agar impor banyak foto berhenti', async () => {
+    await assert.rejects(() => G.identify(PNG, { key: 'k', models: ['a'], fetch: async () => fail(429) }), e => e.quota === true);
+  });
+
   await t('tanpa kunci atau tanpa foto ditolak sebelum memanggil jaringan', async () => {
     let called = false; const f = async () => { called = true; return reply('{}'); };
     await assert.rejects(() => G.identify(PNG, { key: '', models: ['a'], fetch: f }), /kunci/i);

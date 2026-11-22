@@ -32,6 +32,12 @@ Aplikasi untuk memantau proyek lanskap dari **Survei, Penawaran, RAB, Opname, sa
 - **Koneksi Supabase tersimpan.** Lihat **SINKRON.md**.
 - **Cadangan Google Drive.** Lihat **GOOGLE-DRIVE.md**.
 
+**Fitur tambahan (versi 1.9.0)** — semuanya di tab Katalog
+- **Katalog untuk klien.** Di *Database Tanaman* tekan *Katalog klien*: pilih tanaman, isi judul dan nama klien, lalu *Cetak / simpan PDF* (pilih "Simpan sebagai PDF" di dialog cetak) atau *Unduh file*. Isinya foto, nama lokal dan ilmiah, ukuran, cahaya, dan harga satuan bila dicentang. Bila cetak tidak tersedia di perangkat, unduh file lalu cetak dari browser.
+- **Rekomendasi tanaman.** Menu *Rekomendasi Tanaman*: pilih cahaya lokasi (terik, semi teduh, teduh), luas area, tinggi maksimal, dan fungsi/kategori. Hasilnya tanaman dari katalog Anda yang cocok, dengan perkiraan jumlah (luas ÷ jarak tanam²) dan biaya. Tanaman yang kolom cahayanya kosong tetap muncul di urutan akhir. *Buat katalog klien dari hasil* mengirim hasilnya ke katalog klien.
+- **Impor banyak foto.** Menu *Impor Banyak Foto*: pilih sampai 10 foto, Gemini mengenali satu per satu, lalu Anda mencentang yang disimpan. Yang namanya sudah ada di katalog tidak tercentang. Bila kunci salah atau kuota habis, sisa foto dilewati. Harga dan stok awal 0 dan perlu Anda isi.
+- **Pengaturan Katalog dirapikan.** Panel cloud, endpoint AI, data aplikasi, dan pemeriksaan data dihapus. Sinkron antar perangkat memakai Pengaturan utama aplikasi.
+
 Tahap proyek dihitung otomatis dari data ini. Saran pengembangan ada di **SARAN-PENGEMBANGAN.md**.
 
 **Keuangan sudah dilepas sejak versi 1.4.0.** Data keuangan lama tidak dihapus: tetap ada di perangkat, ikut file cadangan, dan tetap ada di Supabase.
@@ -86,9 +92,9 @@ index.html  shell-core.js  shell-pages.js  shell-bridge.js  shell-sync.js  shell
 sync-setup.sql  SINKRON.md  ONEDRIVE.md
 shell-onedrive.js  shell-space.js
 manifest.webmanifest  sw.js  icons/  config.js  shell-gdrive.js  GOOGLE-DRIVE.md
-lib/ (kv.js, common.js, survei-calc.js, sync-merge.js, proyek-logic.js, gemini-plant.js, gdrive-backup.js, embed.css, xlsx)
+lib/ (kv.js, common.js, survei-calc.js, sync-merge.js, proyek-logic.js, gemini-plant.js, katalog-logic.js, gdrive-backup.js, embed.css, xlsx)
 apps/ proyek.html  tanaman.html  survei/ (aplikasi Flutter web)
-test/ survei-calc, sync-merge, proyek-logic, gemini-plant, gdrive-backup (*.test.js, jalankan dengan node)  sync-two-devices.js (uji browser, hanya localhost)
+test/ survei-calc, sync-merge, proyek-logic, gemini-plant, katalog-logic, gdrive-backup (*.test.js, jalankan dengan node)  sync-two-devices.js (uji browser, hanya localhost)
 ```
 
 - **Cadangan OneDrive** dan hemat ruang otomatis: lihat **ONEDRIVE.md**.
