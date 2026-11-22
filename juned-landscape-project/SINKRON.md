@@ -24,10 +24,12 @@ Data aplikasi tetap tersimpan di tiap perangkat (jadi tetap bisa dipakai offline
 
 ## Cara kerjanya
 - Sinkron otomatis: beberapa detik setelah data berubah, saat aplikasi dibuka kembali, saat kembali online, dan tiap 45 detik. Ada tombol *Sinkronkan sekarang*.
-- Yang disinkronkan: proyek (termasuk foto & dokumen), tanaman, material, RAB katalog, transaksi, wallet, utang/piutang, budget, kategori, jadwal berulang, dan nota. **Tidak** disinkronkan: PIN Keuangan dan kunci API Gemini (tetap per perangkat).
+- Yang disinkronkan: proyek (termasuk penawaran, foto & dokumen), survei, tanaman, material, dan RAB katalog. **Tidak** disinkronkan: nama pengguna per perangkat dan data keuangan lama. Baris keuangan lama tetap tersimpan di Supabase, tidak ditarik ke perangkat baru, dan tidak dihapus aplikasi.
 - Offline: tetap bisa bekerja; perubahan terkirim saat online lagi.
 - Foto/dokumen besar dikirim sebagai potongan terpisah dan hanya sekali (tidak diulang tiap perubahan kecil).
-- **Konflik:** bila dua perangkat mengubah data yang sama sebelum sempat sinkron, versi perangkat yang sinkron belakangan dipakai, dan versi lainnya disimpan di *Pengaturan › Konflik* (bisa dipakai kembali).
+- **Gabung otomatis (Proyek dan Survei):** bila dua perangkat mengubah proyek yang sama, perubahannya digabung per bagian. Misalnya mandor mengubah tugas dan pemilik mengubah harga RAB: keduanya tersimpan.
+- **Konflik:** hanya muncul bila dua perangkat mengubah isian yang persis sama dengan nilai berbeda, atau satu menghapus item yang diubah perangkat lain. Nilai di perangkat yang sedang sinkron dipakai (item yang diubah tetap dipertahankan), dan nilai lainnya ada di *Pengaturan › Konflik*. *Pakai versi ini* hanya mengganti bagian yang bentrok. Tanaman, material, dan RAB katalog masih memakai konflik per data.
+- **Tidak saling menimpa:** perangkat hanya menulis ke server bila server masih berisi versi yang sudah digabungnya. Bila tidak, aplikasi menarik lagi dan menggabungkan ulang. Tidak perlu menjalankan ulang `sync-setup.sql`.
 - Saat Anda sedang membuka suatu modul dan ada pembaruan dari perangkat lain untuk modul itu, pembaruan **ditunda** dan muncul tombol *Terapkan*, agar pekerjaan yang sedang berjalan tidak tertimpa.
 - **Pengaman hapus massal:** bila terdeteksi banyak data hilang sekaligus (mis. habis reset/pulihkan cadangan), aplikasi bertanya dulu dan menjeda sinkron.
 

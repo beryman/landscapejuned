@@ -4,10 +4,8 @@
 html.embed { -webkit-text-size-adjust: 100%; }
 
 /* Shell sudah mengurus area aman (notch / home indicator) */
-html.embed[data-mod="proyek"] { padding-top: 0; padding-bottom: 0; --bg: #f7f6ef; }
+html.embed[data-mod="proyek"] { padding-top: 0; padding-bottom: 0; --bg: #f4f1e8; --card: #fffdf8; --ink: #1f2a22; --mut: #5c675e; --line: #e1e5dc; }
 html.embed[data-mod="proyek"] html, html.embed[data-mod="proyek"] { scroll-padding-top: 0; }
-html.embed[data-mod="keuangan"] header { padding-top: 0; }
-html.embed[data-mod="keuangan"] body { padding-bottom: 0; }
 
 /* ---------- Proyek ---------- */
 html.embed[data-mod="proyek"] header { padding: 10px 16px; background: #fff; position: sticky; top: 0; z-index: 20; }
@@ -23,14 +21,18 @@ html.embed[data-mod="proyek"] main { padding: 16px; }
   html.embed[data-mod="proyek"] .tabs button { flex: 0 0 auto; }
 }
 
-/* ---------- Keuangan ---------- */
-html.embed[data-mod="keuangan"] nav { padding: 10px 14px; }
-html.embed[data-mod="keuangan"] .logo { font-size: 18px; }
-html.embed[data-mod="keuangan"] .wrap { padding-bottom: 28px; }
-
 /* ---------- Tanaman ---------- */
 html.embed[data-mod="tanaman"] .app { min-height: 100%; }
 html.embed[data-mod="tanaman"] .sidebar { top: 0; }
+/* Shell sudah punya menu kiri: menu Katalog jadi laci agar konten memakai lebar penuh */
+@media (max-width: 1100px) {
+  html.embed[data-mod="tanaman"] .app { display: block; }
+  html.embed[data-mod="tanaman"] .sidebar { position: fixed; z-index: 15; inset: 0 auto 0 0; width: 260px; transform: translateX(-102%); transition: transform .2s; box-shadow: 15px 0 40px #0002; }
+  html.embed[data-mod="tanaman"] .sidebar:not(.open) { visibility: hidden; }
+  html.embed[data-mod="tanaman"] .sidebar.open { transform: translateX(0); }
+  html.embed[data-mod="tanaman"] .mobile-menu { display: inline-flex; }
+}
+@media (prefers-reduced-motion: reduce) { html.embed[data-mod="tanaman"] .sidebar { transition: none; } }
 
 /* Cetak: sembunyikan elemen shell tidak relevan (modul dicetak sendiri) */
 @media print {

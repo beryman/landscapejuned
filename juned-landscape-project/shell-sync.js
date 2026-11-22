@@ -5,22 +5,16 @@
 'use strict';
 const SK = { tk: 'tamankerja:v1', tkcfg: 'tk:cfg', pbp: 'plantbase_landscape_v1', pbm: 'plantbase_materials_v18', pbr: 'plantbase_rabs_v18' };
 const SYNC_COLLS = [
-  { c: 'tk:p', key: SK.tk, mod: 'proyek', lbl: r => 'Proyek: ' + r.name },
+  { c: 'tk:p', key: SK.tk, mod: 'proyek', merge: true, lbl: r => 'Proyek: ' + r.name },
   { c: 'pb:plant', key: SK.pbp, mod: 'tanaman', lbl: r => 'Tanaman: ' + (r.local || r.name) },
   { c: 'pb:mat', key: SK.pbm, mod: 'tanaman', lbl: r => 'Material: ' + r.name },
   { c: 'pb:rab', key: SK.pbr, mod: 'tanaman', lbl: r => 'RAB katalog: ' + r.name },
   { c: 'tk:cfg', key: SK.tkcfg, mod: 'proyek', single: true, lbl: () => 'Pengaturan Proyek' },
   // Survei (LANDSPACE): satu kunci KV per proyek dan per foto, supaya mengubah satu proyek tidak menulis ulang semua foto
-  { c: 'ls:p', prefix: 'landspace:p:', mod: 'survei', lbl: r => 'Survei: ' + r.name },
+  { c: 'ls:p', prefix: 'landspace:p:', mod: 'survei', merge: true, lbl: r => 'Survei: ' + r.name },
   { c: 'ls:photo', prefix: 'landspace:photo:', mod: 'survei', lbl: r => 'Foto survei: ' + r.id },
-  { c: 'ls:cfg', key: 'landspace:cfg', single: true, mod: 'survei', lbl: () => 'Pengaturan Survei' },
-  { c: 'fin:wallets', store: 'wallets', mod: 'keuangan', lbl: r => 'Wallet: ' + r.name },
-  { c: 'fin:txs', store: 'txs', mod: 'keuangan', lbl: r => 'Transaksi: ' + (r.note || r.id) },
-  { c: 'fin:debts', store: 'debts', mod: 'keuangan', lbl: r => 'Utang/piutang: ' + (r.person || r.id) },
-  { c: 'fin:budgets', store: 'budgets', mod: 'keuangan', lbl: r => 'Budget: ' + (r.category || r.id) },
-  { c: 'fin:categories', store: 'categories', mod: 'keuangan', lbl: r => 'Kategori: ' + r.name },
-  { c: 'fin:recurring', store: 'recurring', mod: 'keuangan', lbl: r => 'Transaksi berulang: ' + (r.note || r.name || r.id) },
-  { c: 'fin:receipts', store: 'receipts', mod: 'keuangan', lbl: r => 'Nota: ' + (r.store || r.id), blobKey: 'blob' }
+  { c: 'ls:cfg', key: 'landspace:cfg', single: true, mod: 'survei', lbl: () => 'Pengaturan Survei' }
+  // Koleksi fin:* sengaja tidak lagi ditarik/didorong: baris lamanya tetap utuh di cloud, HP baru tidak menerimanya.
 ];
 const CHUNK = 400000;
 const sync = { cfg: null, auth: null, st: null, running: false, again: false, deferred: false, status: 'off', msg: '', lastOk: 0, dt: 0, timer: 0, conflicts: [] };
@@ -204,6 +198,14 @@ async function uploadBlobs(blobs) {
   blobs.forEach((_, h) => { sync.st.blobs[h] = 1; });
 }
 
+/* ---------- gabung per bagian: butuh salinan versi terakhir yang sama-sama diketahui ---------- */
+const SNAP = 'jlp:sync:snap:', snapKey = (c, id) => SNAP + c + ':' + id;
+async function mergeRemote(def, r, L, B, bcache) {
+  const snap = await kvJSON(snapKey(def.c, r.id), null);
+  if (!snap || await sha256(stable(snap)) !== B.h) return null;   // salinan tidak cocok: pakai jalur konflik lama
+  return SyncMerge.merge3(snap, await toCanon(L, bcache, 'diff'), r.data);
+}
+
 /* ---------- tarik (pull) ---------- */
 async function pullRows() {
   const cur = sync.st.cursor;
@@ -229,7 +231,7 @@ async function syncPull(opts) {
   for (const r of fresh) {
     const def = defs[r.coll];
     const lm = lms[r.coll] || (lms[r.coll] = await localMap(def)), base = sync.st.base[r.coll] || (sync.st.base[r.coll] = {});
-    const P = plan[r.coll] || (plan[r.coll] = { ups: new Map(), dels: new Set(), stamp: new Map() });
+    const P = plan[r.coll] || (plan[r.coll] = { ups: new Map(), dels: new Set(), stamp: new Map(), remote: new Map(), merged: new Map() });
     const L = lm.get(r.id), B = base[r.id];
     const lh = L ? await recHash(L) : null;
     const localChanged = L ? (B ? lh !== B.h : true) : !!B;
@@ -245,6 +247,16 @@ async function syncPull(opts) {
       if (rh === lh) { base[r.id] = { h: lh, v: r.updated_at }; continue; }
       sync.conflicts.push({ k: Math.random().toString(36).slice(2), t: Date.now(), c: r.coll, rid: r.id, lbl: def.lbl(L), side: 'lokal', data: await toCanon(L, null, 'diff') });
     } else if (L && localChanged) {
+      const m = def.merge ? await mergeRemote(def, r, L, B, bcache) : null;
+      if (m) {
+        let merged;
+        try { merged = await expandCanon(m.value, (h, n) => fetchBlob(h, n, bcache)); }
+        catch (e) { sync.lastWarn = e.message; continue; }
+        m.conflicts.forEach(c => sync.conflicts.push({ k: Math.random().toString(36).slice(2), t: Date.now(), c: r.coll, rid: r.id, lbl: def.lbl(L) + ' · ' + c.label, side: 'server', path: c.path, other: c.other === undefined ? null : c.other, del: c.other === undefined }));
+        // base = versi server, sehingga hasil gabungan terdeteksi berubah dan didorong ke perangkat lain
+        P.ups.set(r.id, merged); P.stamp.set(r.id, r.updated_at); P.remote.set(r.id, r.data); P.merged.set(r.id, await sha256(stable(r.data)));
+        continue;
+      }
       sync.conflicts.push({ k: Math.random().toString(36).slice(2), t: Date.now(), c: r.coll, rid: r.id, lbl: def.lbl(L), side: 'server', data: r.data });
       if (B) B.v = r.updated_at; continue;   // lokal menang (akan didorong), versi server disimpan di Konflik
     }
@@ -252,15 +264,18 @@ async function syncPull(opts) {
     try { rec = await expandCanon(r.data, (h, n) => fetchBlob(h, n, bcache)); }
     catch (e) { sync.lastWarn = e.message; continue; }   // blob belum lengkap: coba lagi nanti (kursor tidak maju)
     if (def.blobKey && typeof rec[def.blobKey] === 'string' && rec[def.blobKey].indexOf('data:') === 0) rec[def.blobKey] = dataURLToBlob(rec[def.blobKey]);
-    P.ups.set(r.id, rec); P.stamp.set(r.id, r.updated_at);
+    P.ups.set(r.id, rec); P.stamp.set(r.id, r.updated_at); P.remote.set(r.id, r.data);
   }
   let applied = 0;
   for (const def of SYNC_COLLS) {
     const P = plan[def.c]; if (!P || (!P.ups.size && !P.dels.size)) continue;
     await applyColl(def, P.ups, P.dels, lms[def.c]);
     const base = sync.st.base[def.c] || (sync.st.base[def.c] = {});
-    for (const [id, rec] of P.ups) { base[id] = { h: await recHash(rec), v: P.stamp.get(id) }; applied++; }
-    P.dels.forEach(id => { delete base[id]; applied++; });
+    for (const [id, rec] of P.ups) {
+      base[id] = { h: P.merged.get(id) || await recHash(rec), v: P.stamp.get(id) }; applied++;
+      if (def.merge) await KV.set(snapKey(def.c, id), JSON.stringify(P.remote.get(id)));
+    }
+    for (const id of P.dels) { delete base[id]; applied++; if (def.merge) await KV.del(snapKey(def.c, id)); }
   }
   const incomplete = !!sync.lastWarn; sync.lastWarn = '';
   if (!incomplete) sync.st.cursor = rows[rows.length - 1].updated_at;
@@ -274,8 +289,7 @@ function afterRemoteApplied(mods) {
   if (set.has('proyek')) { state.sumTried = false; if (state.view === 'proyek') setView('proyek'); else loadFrame('proyek'); }
   if (set.has('tanaman') && state.view === 'tanaman') setView('tanaman');
   if (set.has('survei') && state.view === 'survei') setView('survei');
-  if (set.has('keuangan')) { const w = frameWin('keuangan'); if (w && w.render && (!state.pinSet || state.finUnlocked)) { try { w.render(); } catch (_) {} } }
-  if (state.view === 'home') renderHome(); else if (state.view === 'terpadu') renderTerpadu();
+  if (state.view === 'home') renderHome();
 }
 
 /* ---------- dorong (push) ---------- */
@@ -285,7 +299,12 @@ async function syncPush() {
   for (const def of SYNC_COLLS) {
     const lm = await localMap(def), base = sync.st.base[def.c] || (sync.st.base[def.c] = {});
     totalBase += Object.keys(base).length;
-    for (const [id, rec] of lm) { const h = await recHash(rec), B = base[id]; if (!B || B.h !== h) changed.push({ def, id, rec, h }); }
+    const haveSnap = def.merge ? new Set(KV.keys(SNAP + def.c + ':')) : null;
+    for (const [id, rec] of lm) {
+      const h = await recHash(rec), B = base[id];
+      if (!B || B.h !== h) changed.push({ def, id, rec, h });
+      else if (haveSnap && !haveSnap.has(snapKey(def.c, id))) await KV.set(snapKey(def.c, id), JSON.stringify(await toCanon(rec, null, 'diff')));   // data lama: buat salinan awal
+    }
     for (const id of Object.keys(base)) if (!lm.has(id)) dels.push({ def, id });
   }
   if (!changed.length && !dels.length) return { pushed: 0 };
@@ -293,14 +312,32 @@ async function syncPush() {
     const ok = await confirmBox('Terdeteksi ' + dels.length + ' data terhapus di perangkat ini (dari ' + totalBase + '). Jika dilanjutkan, data itu juga akan terhapus di SEMUA perangkat.\n\nBila ini tidak disengaja (mis. habis reset atau pulihkan cadangan), pilih Batal. Sinkron akan dijeda.', { title: 'Hapus massal terdeteksi', ok: 'Hapus di semua perangkat', danger: true });
     if (!ok) { LS.set('jlp_sync_on', '0'); setSyncStatus('paused'); return { pushed: 0, paused: true }; }
   }
-  const docRows = [], meta = [], allBlobs = new Map();
+  const docRows = [], meta = [], guarded = [], allBlobs = new Map();
+  const queue = (def, row, m) => {
+    const B = (sync.st.base[def.c] || {})[row.id];
+    if (def.merge && B && B.v) guarded.push({ row, m, v: B.v }); else { docRows.push(row); meta.push(m); }
+  };
   for (const ch of changed) {
     const blobs = new Map(), data = await toCanon(ch.rec, blobs, 'push');
     blobs.forEach((d, h) => allBlobs.set(h, d));
-    docRows.push({ user_id: sync.auth.uid, coll: ch.def.c, id: ch.id, data, deleted: false, device: deviceId() }); meta.push({ c: ch.def.c, id: ch.id, h: ch.h });
+    queue(ch.def, { user_id: sync.auth.uid, coll: ch.def.c, id: ch.id, data, deleted: false, device: deviceId() }, { c: ch.def.c, id: ch.id, h: ch.h, snap: ch.def.merge ? data : null });
   }
-  dels.forEach(d => { docRows.push({ user_id: sync.auth.uid, coll: d.def.c, id: d.id, data: null, deleted: true, device: deviceId() }); meta.push({ c: d.def.c, id: d.id, del: true }); });
+  dels.forEach(d => queue(d.def, { user_id: sync.auth.uid, coll: d.def.c, id: d.id, data: null, deleted: true, device: deviceId() }, { c: d.def.c, id: d.id, del: true, merge: d.def.merge }));
   await uploadBlobs(allBlobs);
+  const settle = async (m, v) => {
+    const base = sync.st.base[m.c] || (sync.st.base[m.c] = {});
+    if (m.del) { delete base[m.id]; if (m.merge) await KV.del(snapKey(m.c, m.id)); }
+    else { base[m.id] = { h: m.h, v: v || null }; if (m.snap) await KV.set(snapKey(m.c, m.id), JSON.stringify(m.snap)); }
+  };
+  // Tulis hanya bila server masih versi yang kita gabung; bila tidak, perangkat lain menulis lebih dulu dan kita gabung ulang.
+  let stale = 0;
+  for (const g of guarded) {
+    const q = 'coll=eq.' + encodeURIComponent(g.row.coll) + '&id=eq.' + encodeURIComponent(g.row.id) + '&updated_at=eq.' + encodeURIComponent(g.v);
+    const res = await sbFetch('/rest/v1/jlp_docs?' + q + '&select=coll,id,updated_at', { method: 'PATCH', headers: { Prefer: 'return=representation' }, body: JSON.stringify({ data: g.row.data, deleted: g.row.deleted, device: g.row.device }) });
+    if (!res.ok) throw await sbErr(res);
+    const out = await res.json();
+    if (out.length) { await settle(g.m, out[0].updated_at); await saveSyncState(); } else stale++;
+  }
   let i = 0;
   while (i < docRows.length) {
     let j = i, size = 0;
@@ -308,14 +345,11 @@ async function syncPush() {
     const res = await sbFetch('/rest/v1/jlp_docs?on_conflict=user_id,coll,id&select=coll,id,updated_at', { method: 'POST', headers: { Prefer: 'resolution=merge-duplicates,return=representation' }, body: JSON.stringify(docRows.slice(i, j)) });
     if (!res.ok) throw await sbErr(res);
     const out = await res.json(), stamp = new Map(out.map(o => [o.coll + '|' + o.id, o.updated_at]));
-    meta.slice(i, j).forEach(m => {
-      const base = sync.st.base[m.c] || (sync.st.base[m.c] = {});
-      if (m.del) delete base[m.id]; else base[m.id] = { h: m.h, v: stamp.get(m.c + '|' + m.id) || null };
-    });
+    for (const m of meta.slice(i, j)) await settle(m, stamp.get(m.c + '|' + m.id));
     await saveSyncState();
     i = j;
   }
-  return { pushed: docRows.length };
+  return { pushed: docRows.length + guarded.length - stale, stale };
 }
 
 /* ---------- putaran sinkron ---------- */
@@ -330,7 +364,7 @@ async function syncRun(opts = {}) {
     await flushAll();
     const r = await syncPull(opts);
     if (r.deferred) { setSyncStatus('pending', r.n + ' pembaruan menunggu'); if (Date.now() - (sync.lastOffer || 0) > 300000) { sync.lastOffer = Date.now(); toast('Ada pembaruan dari perangkat lain', { action: 'Terapkan', ms: 12000, onAction: () => { const m = state.view; syncRun({ force: true }).then(() => { if (MODS[m] && MODS[m].frame) { unloadFrame(m); setView(m); } }); } }); } }
-    else { const p = await syncPush(); if (!p.paused) { sync.lastOk = Date.now(); LS.set('jlp_sync_last', String(sync.lastOk)); space.full = false; setSyncStatus('ok'); if (typeof spaceAfterSync === 'function') spaceAfterSync(); } }
+    else { const p = await syncPush(); if (p.stale) { sync.staleN = (sync.staleN || 0) + 1; if (sync.staleN <= 3) sync.again = true; else { sync.staleN = 0; setSyncStatus('err', 'Perubahan tertahan, dicoba lagi pada sinkron berikutnya'); } } else if (!p.paused) { sync.staleN = 0; sync.lastOk = Date.now(); LS.set('jlp_sync_last', String(sync.lastOk)); space.full = false; setSyncStatus('ok'); if (typeof spaceAfterSync === 'function') spaceAfterSync(); } }
   } catch (e) { console.error('sync', e); if (e && e.full) { space.full = true; if (state.view === 'home') renderHome(); } setSyncStatus('err', e && e.message ? e.message : 'Gagal'); }
   finally { sync.running = false; if (sync.again) { sync.again = false; setTimeout(() => syncRun(), 400); } }
 }
@@ -372,11 +406,18 @@ async function useConflict(k) {
   toast('Menerapkan versi terpilih…');
   try {
     const bc = new Map();
-    let rec = await expandCanon(c.data, (h, n) => fetchBlob(h, n, bc));
-    if (def.blobKey && typeof rec[def.blobKey] === 'string' && rec[def.blobKey].indexOf('data:') === 0) rec[def.blobKey] = dataURLToBlob(rec[def.blobKey]);
     await flushFrame(def.mod);
-    const lm = await localMap(def); await applyColl(def, new Map([[c.rid, rec]]), new Set(), lm);
-    if (MODS[def.mod] && MODS[def.mod].frame && def.mod !== 'keuangan') { unloadFrame(def.mod); if (state.view === def.mod) setView(def.mod); }
+    const lm = await localMap(def);
+    let rec;
+    if (c.path) {   // konflik per bagian: ganti bagian itu saja, perubahan lain tetap
+      const cur = lm.get(c.rid); if (!cur) { toast('Data ini sudah tidak ada'); return; }
+      rec = await expandCanon(SyncMerge.applyPatch(await toCanon(cur, bc, 'diff'), c.path, c.del ? undefined : c.other), (h, n) => fetchBlob(h, n, bc));
+    } else {
+      rec = await expandCanon(c.data, (h, n) => fetchBlob(h, n, bc));
+      if (def.blobKey && typeof rec[def.blobKey] === 'string' && rec[def.blobKey].indexOf('data:') === 0) rec[def.blobKey] = dataURLToBlob(rec[def.blobKey]);
+    }
+    await applyColl(def, new Map([[c.rid, rec]]), new Set(), lm);
+    if (MODS[def.mod] && MODS[def.mod].frame) { unloadFrame(def.mod); if (state.view === def.mod) setView(def.mod); }
     sync.conflicts = sync.conflicts.filter(x => x.k !== k); await saveConflicts();
     toast('Versi diterapkan. Akan disinkronkan ke perangkat lain.'); syncKick(500); renderSettings();
   } catch (e) { toast('Gagal menerapkan: ' + e.message); }

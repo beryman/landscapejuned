@@ -56,7 +56,6 @@ async function reduceImages(onStep) {
     for (const [id, rec] of lm) { const before = st.n; const nr = await shrinkValue(rec, st); if (st.n > before) ups.set(id, nr); }
     if (ups.size) { onStep && onStep('Mengecilkan foto: ' + def.c + ' (' + ups.size + ')…'); await applyColl(def, ups, new Set(), lm); st.recs += ups.size; }
   }
-  const w = frameWin('keuangan'); if (w && w.render && (!state.pinSet || state.finUnlocked)) { try { w.render(); } catch (_) {} }
   state.sumTried = false;
   return st;
 }
@@ -129,7 +128,7 @@ async function saveSpaceFlow({ auto = false } = {}) {
     console.error('hemat ruang', e); toast('Hemat ruang gagal: ' + e.message, { ms: 7000 }); return null;
   } finally {
     space.busy = false; if (modal) modal.close();
-    if (['home', 'setelan', 'terpadu'].includes(state.view)) setView(state.view); else setView(state.view);
+    setView(state.view);
   }
 }
 async function spaceAfterSync() {
@@ -138,7 +137,7 @@ async function spaceAfterSync() {
   if (state.view === 'home') renderHome();
   if (spacePct() < spaceThreshold()) return;
   if (LS.get('jlp_reduce_auto') === '0' || !odReady() || odState.needLogin) return;
-  if (!['home', 'terpadu', 'setelan'].includes(state.view)) return;   // jangan ganggu saat sedang di dalam modul
+  if (!['home', 'setelan'].includes(state.view)) return;   // jangan ganggu saat sedang di dalam modul
   if (Date.now() - num(LS.get('jlp_reduce_last')) < 6 * 3600000) return;
   LS.set('jlp_reduce_last', String(Date.now()));
   toast('Ruang cloud hampir penuh. Menghemat ruang otomatis…', { ms: 4000 });

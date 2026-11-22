@@ -2,7 +2,7 @@
   "id": "./",
   "name": "Juned Landscape Project",
   "short_name": "Juned LP",
-  "description": "Manajemen proyek lanskap, katalog tanaman & material, dan keuangan dalam satu aplikasi.",
+  "description": "Pantau proyek lanskap dari survei, penawaran, RAB, sampai opname dalam satu aplikasi.",
   "lang": "id",
   "dir": "ltr",
   "start_url": "./#/home",
@@ -12,7 +12,7 @@
   "orientation": "any",
   "background_color": "#244d3b",
   "theme_color": "#244d3b",
-  "categories": ["business", "productivity", "finance"],
+  "categories": ["business", "productivity"],
   "icons": [
     { "src": "icons/icon-192.png", "sizes": "192x192", "type": "image/png", "purpose": "any" },
     { "src": "icons/icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "any" },
@@ -20,7 +20,6 @@
   ],
   "shortcuts": [
     { "name": "Proyek", "short_name": "Proyek", "url": "./#/proyek", "icons": [{ "src": "icons/icon-192.png", "sizes": "192x192" }] },
-    { "name": "Tanaman & Material", "short_name": "Tanaman", "url": "./#/tanaman", "icons": [{ "src": "icons/icon-192.png", "sizes": "192x192" }] },
-    { "name": "Keuangan", "short_name": "Keuangan", "url": "./#/keuangan", "icons": [{ "src": "icons/icon-192.png", "sizes": "192x192" }] }
+    { "name": "Katalog Tanaman & Material", "short_name": "Katalog", "url": "./#/tanaman", "icons": [{ "src": "icons/icon-192.png", "sizes": "192x192" }] }
   ]
 }

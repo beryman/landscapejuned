@@ -1,6 +1,6 @@
 :root{
   --g1:#244d3b;--g2:#2f6b3a;--g3:#3d8049;--mint:#e6efe6;
-  --cream:#f4f1e8;--paper:#fffdf8;--ink:#1f2a22;--mut:#6e7a70;--line:#e1e5dc;
+  --cream:#f4f1e8;--paper:#fffdf8;--ink:#1f2a22;--mut:#5c675e;--line:#e1e5dc;
   --gold:#d9b86c;--red:#b54845;--clay:#c2410c;--blue:#2b6cb0;
   --rail:84px;--tab:60px;--r:14px;
   --sat:env(safe-area-inset-top,0px);--sab:env(safe-area-inset-bottom,0px);--sal:env(safe-area-inset-left,0px);--sar:env(safe-area-inset-right,0px);
@@ -8,6 +8,7 @@
 }
 *{box-sizing:border-box}
 html,body{height:100%;margin:0}
+/* Font sistem dipilih sengaja: aplikasi dipasang sebagai PWA di HP, jadi muat instan tanpa unduhan font dan terbaca jelas di layar kecil. */
 body{background:var(--g1);color:var(--ink);font:15px/1.5 -apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,"Helvetica Neue",Arial,sans-serif;-webkit-font-smoothing:antialiased;overscroll-behavior:none;padding-top:var(--sat)}
 button,input,select,textarea{font:inherit;color:inherit}
 button{cursor:pointer;-webkit-tap-highlight-color:transparent;touch-action:manipulation}
@@ -159,3 +160,41 @@ details.dd ol{margin:8px 0 2px;padding-left:20px}
 #railSync[data-s=syncing] svg{animation:jspin 1.2s linear infinite}
 @keyframes jspin{to{transform:rotate(360deg)}}
 a.syncpill{text-decoration:none}
+
+@media (prefers-reduced-motion:reduce){#railSync[data-s=syncing] svg{animation:none}#toast{transition:none}}
+
+/* ---------- Survei terbuka dari dalam Proyek ---------- */
+#svbar{display:none;position:absolute;inset:0 0 auto 0;height:54px;z-index:2;align-items:center;gap:12px;padding:0 12px;background:var(--paper);border-bottom:1px solid var(--line)}
+#stage.svmode #svbar{display:flex}
+#stage.svmode iframe#v-survei{top:54px;height:calc(100% - 54px)}
+#svBack{flex:0 0 auto;min-height:44px}
+#svText{min-width:0;line-height:1.25}
+#svText b,#svText small{display:block;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+
+/* ---------- Pantauan tahap proyek: garis tahap adalah motif utama aplikasi ---------- */
+.pipe{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));background:var(--paper);border:1px solid var(--line);border-radius:var(--r);overflow:hidden}
+.pipe button{border:0;border-left:1px solid var(--line);background:transparent;padding:12px 4px 10px;min-height:68px;display:flex;flex-direction:column;align-items:center;gap:1px;position:relative}
+.pipe button:first-child{border-left:0}
+.pipe button:hover{background:var(--mint)}
+.pipe button.on{background:var(--g1);color:#fff}
+.pipe button:focus-visible{outline:2px solid var(--gold);outline-offset:-2px}
+.pipe b{font-size:23px;line-height:1.15;font-weight:800}
+.pipe span{font-size:12px;font-weight:600;color:var(--mut)}
+.pipe .on span{color:#e6efe6}
+.track{display:grid;grid-template-columns:repeat(5,1fr);gap:3px;margin:2px 0 9px}
+.track i{height:6px;background:#e6eadf;border-radius:2px}
+.track i.done{background:var(--g2)}
+.track i.now{background:var(--gold)}
+.pjgrid{grid-template-columns:repeat(auto-fill,minmax(270px,1fr))}
+.pj .top b{font-size:13px;color:var(--g2);white-space:nowrap}
+.pjm{display:flex;flex-wrap:wrap;gap:2px 12px;font-size:13px;color:var(--mut)}
+.pjm .lt{color:var(--clay);font-weight:700}
+.item .tag{flex:0 0 76px;font-size:12px;font-weight:700;color:var(--g1);background:var(--mint);border-radius:7px;padding:5px 2px;text-align:center}
+.item.warn .tag{background:#fdeadb;color:#9a3412}
+.item>div{min-width:0}
+.item small{display:block;overflow-wrap:anywhere}
+.guide{margin-top:12px}
+.guide ol{margin:8px 0 0;padding-left:20px;display:grid;gap:6px}
+.lnk{border:0;background:none;padding:0;color:var(--g2);font-weight:700;text-decoration:underline;text-underline-offset:2px;min-height:0}
+.lnk:focus-visible{outline:2px solid var(--gold);outline-offset:2px}
+details.dd[style*="grid-column"]{background:var(--paper)}

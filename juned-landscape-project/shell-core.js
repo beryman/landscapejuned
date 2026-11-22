@@ -1,6 +1,6 @@
 /* Juned Landscape Project - shell: utilitas, penyimpanan, navigasi, iframe modul, PWA */
 'use strict';
-const APP_VERSION = '1.3.0';
+const APP_VERSION = '1.6.0';
 const $ = (s, r = document) => r.querySelector(s);
 const $$ = (s, r = document) => Array.from(r.querySelectorAll(s));
 const esc = s => String(s == null ? '' : s).replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
@@ -23,18 +23,14 @@ const IC = {
   proyek: '<svg viewBox="0 0 24 24"><rect x="5" y="4.5" width="14" height="16.5" rx="2"/><path d="M9 4.5V3h6v1.5"/><path d="m9 13 2 2 4-4.5"/></svg>',
   tanaman: '<svg viewBox="0 0 24 24"><path d="M12 21v-8"/><path d="M12 13c0-4-3-6.5-7.5-6.5C4.5 10.5 7.5 13 12 13Z"/><path d="M12 11c0-3.5 2.5-6 7-6 0 4-2.5 6-7 6Z"/></svg>',
   survei: '<svg viewBox="0 0 24 24"><rect x="3.5" y="3.5" width="17" height="17" rx="2.5"/><path d="M3.5 9.5h17M9.5 3.5v17" opacity=".45"/><path d="m8 16 2.5-3 2 2 3.5-5"/></svg>',
-  keuangan: '<svg viewBox="0 0 24 24"><path d="M4 7.5A2.5 2.5 0 0 1 6.5 5H18v3"/><rect x="3.5" y="7.5" width="17" height="12" rx="2.5"/><circle cx="16.5" cy="13.5" r="1.2"/></svg>',
-  terpadu: '<svg viewBox="0 0 24 24"><path d="M5 19v-6"/><path d="M12 19V6"/><path d="M19 19v-9"/><path d="M3 20.5h18"/></svg>',
   setelan: '<svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><path d="M12 2.8v2.4M12 18.8v2.4M2.8 12h2.4M18.8 12h2.4M5.5 5.5l1.7 1.7M16.8 16.8l1.7 1.7M5.5 18.5l1.7-1.7M16.8 7.2l1.7-1.7"/></svg>',
-  more: '<svg viewBox="0 0 24 24"><circle cx="5.5" cy="12" r="1.4"/><circle cx="12" cy="12" r="1.4"/><circle cx="18.5" cy="12" r="1.4"/></svg>',
   cloud: '<svg viewBox="0 0 24 24"><path d="M7 18.5h10a4 4 0 0 0 .6-7.95A5.5 5.5 0 0 0 7.2 9.4 4.6 4.6 0 0 0 7 18.5Z"/></svg>',
   install: '<svg viewBox="0 0 24 24"><path d="M12 3.5v11"/><path d="m7.5 10.5 4.5 4.5 4.5-4.5"/><path d="M4.5 19.5h15"/></svg>'
 };
 const NAV = [
-  { id: 'home', label: 'Beranda' }, { id: 'proyek', label: 'Proyek' }, { id: 'survei', label: 'Survei' }, { id: 'tanaman', label: 'Tanaman' },
-  { id: 'keuangan', label: 'Keuangan' }, { id: 'terpadu', label: 'Terpadu' }, { id: 'setelan', label: 'Pengaturan' }
+  { id: 'home', label: 'Beranda' }, { id: 'proyek', label: 'Proyek' }, { id: 'tanaman', label: 'Katalog' }, { id: 'setelan', label: 'Pengaturan' }
 ];
-const VIEWS = NAV.map(n => n.id);
+const VIEWS = NAV.map(n => n.id).concat('survei');   // Survei dibuka dari dalam Proyek, tidak ada di menu
 
 /* ---------- toast ---------- */
 let toastT = 0;
@@ -118,16 +114,6 @@ async function finTx(stores, fn) {
     t.oncomplete = () => res(); t.onerror = () => rej(t.error); t.onabort = () => rej(t.error || new Error('Dibatalkan'));
   });
 }
-const DEFAULT_CATS = [{ id: 'food', name: 'Makanan', icon: '🍜' }, { id: 'shop', name: 'Belanja', icon: '🛍️' }, { id: 'transport', name: 'Transportasi', icon: '🚗' }, { id: 'bill', name: 'Tagihan', icon: '🧾' }, { id: 'ent', name: 'Hiburan', icon: '🎮' }, { id: 'health', name: 'Kesehatan', icon: '💊' }, { id: 'other', name: 'Lainnya', icon: '📦' }, { id: 'project', name: 'Proyek', icon: '🌿' }];
-const DEFAULT_WALLETS = [{ id: 'wallet_cash', name: 'Cash' }, { id: 'wallet_bank', name: 'Bank' }, { id: 'wallet_ewallet', name: 'E-Wallet' }];
-async function finSeed() {
-  const ws = await finAll('wallets'), cs = await finAll('categories');
-  const wid = new Set(ws.map(w => w.id)), wn = new Set(ws.map(w => String(w.name || '').trim().toLowerCase())), cid = new Set(cs.map(c => c.id));
-  await finTx(['wallets', 'categories'], t => {
-    DEFAULT_WALLETS.forEach(w => { if (!wid.has(w.id) && !wn.has(w.name.toLowerCase())) t.objectStore('wallets').put({ ...w, system: true }); });
-    DEFAULT_CATS.forEach(c => { if (!cid.has(c.id)) t.objectStore('categories').put({ ...c, system: true }); });
-  });
-}
 
 async function readTK() {
   await flushFrame('proyek');
@@ -138,40 +124,17 @@ async function readTK() {
 async function readPB() {
   await flushFrame('tanaman');
   const arr = v => Array.isArray(v) ? v : (v && Array.isArray(v.plants) ? v.plants : []);
-  const plants = arr(await kvJSON('plantbase_landscape_v1', [])).filter(p => p && !p._deleted && (p.local || p.name));
+  const plants = arr(await kvJSON('plantbase_landscape_v1', [])).filter(p => p && !p._deleted && (p.local || p.name) && !(/^demo-[0-9]+$/.test(p.id) && p.updatedAt === p.created));
   const mats = await kvJSON('plantbase_materials_v18', []), rabs = await kvJSON('plantbase_rabs_v18', []);
   return { plants, materials: Array.isArray(mats) ? mats.filter(m => m && m.name) : [], rabs: Array.isArray(rabs) ? rabs.filter(r => r && Array.isArray(r.items)) : [] };
 }
-async function finPinSet() { try { return (await finAll('settings')).some(s => s.id === 'pin'); } catch (_) { return false; } }
-function finAccessible(pinSet) { return !pinSet || state.finUnlocked; }
-async function readFin() {
-  const pin = await finPinSet(); state.pinSet = pin;
-  if (!finAccessible(pin)) return { locked: true };
-  const [wallets, txs, debts] = await Promise.all([finAll('wallets'), finAll('txs'), finAll('debts')]);
-  let balance = wallets.reduce((a, w) => a + num(w.opening), 0), inc = 0, exp = 0;
-  const m = todayISO().slice(0, 7), byProj = {};
-  for (const t of txs) {
-    const a = num(t.amount);
-    if (t.type === 'income' || t.type === 'transfer-in') balance += a; else if (t.type === 'expense' || t.type === 'transfer-out') balance -= a;
-    if (String(t.date || '').startsWith(m)) { if (t.type === 'income') inc += a; else if (t.type === 'expense') exp += a; }
-    if (t.projectId) { const o = byProj[t.projectId] = byProj[t.projectId] || { in: 0, out: 0 }; if (t.type === 'income') o.in += a; else if (t.type === 'expense') o.out += a; }
-  }
-  const open = debts.filter(d => num(d.amount) - num(d.paid) > 0.5);
-  const left = d => num(d.amount) - num(d.paid);
-  return {
-    locked: false, balance, inc, exp, byProj, wallets, txs, debts: open,
-    recv: open.filter(d => d.type === 'receivable').reduce((a, d) => a + left(d), 0),
-    pay: open.filter(d => d.type === 'payable').reduce((a, d) => a + left(d), 0)
-  };
-}
 
 /* ---------- state & iframe modul ---------- */
-const state = { view: 'home', finUnlocked: false, deferredPrompt: null, swReg: null, pinSet: null };
+const state = { view: 'home', deferredPrompt: null, swReg: null };
 const MODS = {
   proyek: { src: 'apps/proyek.html?embed=1', title: 'Proyek', frame: null, promise: null, resolve: null },
   survei: { src: 'apps/survei/index.html?embed=1', title: 'Survei Lapangan', frame: null, promise: null, resolve: null },
-  tanaman: { src: 'apps/tanaman.html?embed=1', title: 'Tanaman dan Material', frame: null, promise: null, resolve: null },
-  keuangan: { src: 'apps/keuangan.html?embed=1', title: 'Keuangan', frame: null, promise: null, resolve: null }
+  tanaman: { src: 'apps/tanaman.html?embed=1', title: 'Katalog Tanaman dan Material', frame: null, promise: null, resolve: null }
 };
 function loadFrame(name) {
   const m = MODS[name];
@@ -202,7 +165,7 @@ async function flushAll() { for (const n of Object.keys(MODS)) await flushFrame(
 /* ---------- navigasi ---------- */
 function updateNav() {
   $$('.nb[data-v]').forEach(b => {
-    const on = b.dataset.v === state.view || (b.dataset.v === 'more' && ['terpadu', 'setelan'].includes(state.view));
+    const on = b.dataset.v === (state.view === 'survei' ? 'proyek' : state.view);
     b.classList.toggle('on', on);
     if (on) b.setAttribute('aria-current', 'page'); else b.removeAttribute('aria-current');
   });
@@ -213,12 +176,19 @@ function setView(name, replace) {
   const prev = state.view; state.view = name;
   if (MODS[name]) loadFrame(name);
   $$('#stage > .view').forEach(v => v.classList.toggle('on', v.id === 'v-' + name));
+  $('#stage').classList.toggle('svmode', name === 'survei');
+  if (name === 'survei') {
+    const s = state.sv;
+    $('#svText').innerHTML = s ? '<b>' + esc(s.project) + '</b><small>Survei ' + esc(s.code || s.name) + '</small>' : '<b>Survei</b><small>Semua lembar survei</small>';
+    // Juga berjalan setelah modul dimuat ulang oleh sinkron, agar tetap di survei yang sama.
+    loadFrame('survei').then(w => { if (state.view === 'survei' && state.sv === s && w.JLP && w.JLP.openSurvey) return w.JLP.openSurvey(s ? s.id : ''); }).catch(e => console.error(e));
+  }
   updateNav();
   if (prev !== name && MODS[prev]) flushFrame(prev);
   if (prev !== name && typeof syncOnViewChange === 'function') syncOnViewChange(prev);
   if (name === 'home') renderHome();
-  else if (name === 'terpadu') renderTerpadu();
   else if (name === 'setelan') renderSettings();
+  else if (name === 'proyek') { const w = frameWin('proyek'); try { if (w && w.JLP && w.JLP.onShow) w.JLP.onShow(); } catch (_) {} }
   const h = '#/' + name;
   if (location.hash !== h) { try { history[replace ? 'replaceState' : 'pushState'](null, '', h); } catch (_) { location.hash = h; } }
   const sc = $('#v-' + name); if (sc && !MODS[name]) sc.scrollTop = 0;
@@ -230,28 +200,16 @@ function go(name, fn) {
 }
 function buildNav() {
   $('#railNav').innerHTML = NAV.map(n => '<button type="button" class="nb" data-v="' + n.id + '">' + IC[n.id] + '<span>' + n.label + '</span></button>').join('');
-  $('#tabbar').innerHTML = NAV.slice(0, 5).map(n => '<button type="button" class="nb" data-v="' + n.id + '">' + IC[n.id] + '<span>' + n.label + '</span></button>').join('') +
-    '<button type="button" class="nb" data-v="more">' + IC.more + '<span>Lainnya</span></button>';
+  $('#tabbar').innerHTML = $('#railNav').innerHTML;
   $('#railInstall').innerHTML = IC.install + '<span>Pasang</span>';
   $('#railSync').innerHTML = IC.cloud + '<span>Sinkron</span>'; $('#railSync').onclick = () => setView('setelan');
   document.addEventListener('click', e => {
     const b = e.target.closest('.nb[data-v]'); if (!b) return;
-    if (b.dataset.v === 'more') moreSheet(); else setView(b.dataset.v);
+    setView(b.dataset.v);
   });
+  $('#svBack').onclick = () => setView('proyek');
   $('#railInstall').onclick = () => doInstall();
   addEventListener('hashchange', () => { const n = parseHash(); if (n !== state.view) setView(n); });
-}
-function moreSheet() {
-  const m = openModal({
-    title: 'Lainnya',
-    body: '<div class="list"><button type="button" class="item" data-g="terpadu"><span class="ic">' + IC.terpadu.replace('<svg', '<svg width="20" height="20" fill="none" stroke="currentColor" stroke-width="1.8"') + '</span><div><b>Terpadu</b><small>Laba-rugi proyek, sinkron keuangan, katalog ke RAB</small></div><span class="go">›</span></button>' +
-      '<button type="button" class="item" data-g="setelan"><span class="ic">⚙️</span><div><b>Pengaturan</b><small>Cadangan, penyimpanan, pembaruan</small></div><span class="go">›</span></button>' +
-      (JLP.isStandalone() ? '' : '<button type="button" class="item" data-g="install"><span class="ic">⬇️</span><div><b>Pasang aplikasi</b><small>Tambahkan ke layar utama / Dock</small></div><span class="go">›</span></button>') + '</div>'
-  });
-  m.body.addEventListener('click', e => {
-    const b = e.target.closest('[data-g]'); if (!b) return; m.close();
-    if (b.dataset.g === 'install') doInstall(); else setView(b.dataset.g);
-  });
 }
 
 /* ---------- PWA: service worker, pembaruan, pemasangan ---------- */

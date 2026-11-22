@@ -1,4 +1,4 @@
-/* Juned Landscape Project - helper bersama untuk modul (Proyek, Tanaman, Keuangan). */
+/* Juned Landscape Project - helper bersama untuk modul (Proyek, Tanaman). */
 (function () {
   'use strict';
   var JLP = window.JLP = window.JLP || {};

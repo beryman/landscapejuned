@@ -1,12 +1,14 @@
 /* Juned Landscape Project - service worker (offline + pembaruan terkontrol) */
-const VERSION = '1.3.0';
+const VERSION = '1.6.0';
 const CACHE = 'jlp-' + VERSION;
 const RUNTIME = 'jlp-runtime';
+// Naikkan HANYA saat apps/survei dibangun ulang: bundelnya besar dan berkasnya harus dari build yang sama.
+const SURVEI = 'jlp-survei-2';
 const CORE = [
   './', 'index.html', 'manifest.webmanifest',
   'shell.css', 'shell-core.js', 'shell-pages.js', 'shell-bridge.js', 'shell-sync.js', 'shell-onedrive.js', 'shell-space.js',
-  'lib/kv.js', 'lib/common.js', 'lib/embed.css', 'lib/xlsx.full.min.js',
-  'apps/proyek.html', 'apps/tanaman.html', 'apps/keuangan.html',
+  'lib/kv.js', 'lib/common.js', 'lib/survei-calc.js', 'lib/sync-merge.js', 'lib/embed.css', 'lib/xlsx.full.min.js',
+  'apps/proyek.html', 'apps/tanaman.html',
   'icons/icon-192.png', 'icons/icon-512.png', 'icons/icon-maskable-512.png',
   'icons/apple-touch-icon.png', 'icons/favicon-32.png', 'icons/logo-96.png'
 ];
@@ -18,7 +20,9 @@ self.addEventListener('install', e => {
 self.addEventListener('activate', e => {
   e.waitUntil((async () => {
     const keys = await caches.keys();
-    await Promise.all(keys.filter(k => k.startsWith('jlp-') && k !== CACHE && k !== RUNTIME).map(k => caches.delete(k)));
+    await Promise.all(keys.filter(k => k.startsWith('jlp-') && ![CACHE, RUNTIME, SURVEI].includes(k)).map(k => caches.delete(k)));
+    const rt = await caches.open(RUNTIME);   // versi 1.3.1-1.5.0 menyimpan Survei di sini
+    await Promise.all((await rt.keys()).filter(r => r.url.includes('/apps/survei/')).map(r => rt.delete(r)));
     await self.clients.claim();
   })());
 });
@@ -30,13 +34,15 @@ self.addEventListener('fetch', e => {
   const url = new URL(req.url);
   if (url.origin === location.origin) {
     e.respondWith((async () => {
-      const cache = await caches.open(CACHE);
+      const cache = await caches.open(url.pathname.includes('/apps/survei/') ? SURVEI : CACHE);
       const hit = await cache.match(req, { ignoreSearch: true });
-      const net = fetch(req).then(r => { if (r && r.ok && r.type === 'basic') cache.put(req.mode === 'navigate' ? 'index.html' : req, r.clone()); return r; }).catch(() => null);
+      // hanya halaman utama yang memakai kunci index.html; iframe modul (destination 'iframe') disimpan dengan alamatnya sendiri
+      const top = req.destination === 'document';
+      const net = fetch(req).then(r => { if (r && r.ok && r.type === 'basic') cache.put(top ? 'index.html' : req, r.clone()); return r; }).catch(() => null);
       if (hit) { e.waitUntil(net); return hit; }
       const r = await net;
       if (r) return r;
-      if (req.mode === 'navigate') return (await cache.match('index.html')) || Response.error();
+      if (top) return (await cache.match('index.html')) || Response.error();
       return Response.error();
     })());
     return;

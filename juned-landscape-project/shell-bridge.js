@@ -95,59 +95,30 @@ async function pickCatalog(opts = {}) {
   });
 }
 
-/* ========================== SINKRON PEMBAYARAN PROYEK -> KEUANGAN ========================== */
-async function syncFinance({ projectId } = {}) {
-  try {
-    await flushFrame('proyek');
-    const pin = await finPinSet(); state.pinSet = pin;
-    if (!finAccessible(pin)) { toast('Buka kunci Keuangan (PIN) terlebih dahulu'); go('keuangan'); return null; }
-    const tk = (await readTK()).projects;
-    const single = projectId != null && projectId !== '';
-    const scope = single ? tk.filter(p => String(p.id) === String(projectId)) : tk;
-    if (!scope.length) { toast('Belum ada proyek untuk disinkronkan'); return null; }
-    await finSeed();
-    const [txs, wallets] = await Promise.all([finAll('txs'), finAll('wallets')]);
-    const existing = new Map(txs.filter(t => t.projectInvId).map(t => [t.id, t]));
-    const scopeIds = new Set(scope.map(p => String(p.id)));
-    const want = new Map();
-    scope.forEach(p => (p.inv || []).forEach(i => {
-      if (i.st !== 'Dibayar' || num(i.a) <= 0) return;
-      const owner = i.t === 'owner', id = 'proj-' + p.id + '-' + i.id;
-      want.set(id, { id, type: owner ? 'income' : 'expense', amount: num(i.a), note: (owner ? 'Pembayaran owner · ' : 'Upah tukang · ') + p.name + (i.n ? ' · ' + i.n : ''), date: String(i.d || todayISO()).slice(0, 10), category: 'project', memo: 'Otomatis dari modul Proyek', projectId: String(p.id), projectInvId: String(i.id) });
-    }));
-    const add = [], upd = [], del = [];
-    want.forEach((w, id) => { const ex = existing.get(id); if (!ex) add.push(w); else if (ex.amount !== w.amount || ex.date !== w.date || ex.note !== w.note || ex.type !== w.type) upd.push({ ...ex, ...w, wallet: ex.wallet }); });
-    existing.forEach((ex, id) => { if (scopeIds.has(String(ex.projectId)) && !want.has(id)) del.push(ex); });
-    if (!add.length && !upd.length && !del.length) { toast('Sudah sinkron: tidak ada perubahan'); return { add: 0, upd: 0, del: 0 }; }
+/* ========================== SURVEI -> PROYEK ========================== */
+async function listSurveys() {
+  await flushFrame('survei');
+  const all = await KV.prefix('landspace:p:');
+  return Object.values(all).map(v => { try { return JSON.parse(v); } catch (_) { return null; } }).filter(p => p && p.id != null && !p.archived).map(p => {
+    const r = SurveiCalc.rabOf(p);
+    const items = r.items.filter(x => x.included && x.q > 0).map(x => ({ n: x.n, k: 'Material', q: round2(x.q), u: x.u, h: Math.round(x.mat + x.lab), tw: Math.round(x.lab) }));
+    return { id: String(p.id), name: p.name, code: p.code || '', client: p.client || '', address: p.address || '', status: p.status || '', date: p.surveyDate || '', offerNumber: (p.rab && p.rab.offerNumber) || '', validUntil: (p.rab && p.rab.validUntil) || '', areas: (p.areas || []).length, grand: Math.round(r.grand), unpriced: items.filter(x => !x.h).length, items };
+  }).sort((a, b) => String(b.date).localeCompare(String(a.date)));
+}
 
-    const cfg = await kvJSON('jlp:cfg', {});
-    let wallet = null;
-    const proceed = await new Promise(res => {
-      const sum = a => a.reduce((x, y) => x + y.amount, 0);
-      const ins = add.filter(x => x.type === 'income'), outs = add.filter(x => x.type === 'expense');
-      const dflt = wallets.find(w => w.id === cfg.finWallet) || wallets.find(w => w.id === 'wallet_bank') || wallets[0];
-      let h = '<div class="list" style="margin-bottom:10px">' +
-        (add.length ? '<div class="item"><span class="ic">＋</span><div><b>' + add.length + ' transaksi baru</b><small>Pemasukan ' + rp(sum(ins)) + ' (' + ins.length + ') · Pengeluaran ' + rp(sum(outs)) + ' (' + outs.length + ')</small></div></div>' : '') +
-        (upd.length ? '<div class="item"><span class="ic">✎</span><div><b>' + upd.length + ' transaksi diperbarui</b><small>Mengikuti perubahan tagihan di Proyek</small></div></div>' : '') +
-        (del.length ? '<div class="item warn"><span class="ic">🗑</span><div><b>' + del.length + ' transaksi dihapus</b><small>Tagihannya tidak lagi berstatus Dibayar</small></div></div>' : '') + '</div>';
-      if (add.length) h += '<label class="f"><span>Masuk/keluar lewat wallet</span><select id="sfW">' + wallets.map(w => '<option value="' + esc(w.id) + '" ' + (dflt && w.id === dflt.id ? 'selected' : '') + '>' + esc(w.name) + '</option>').join('') + '</select></label>';
-      h += '<div class="small">' + scope.length + ' proyek diperiksa. Transaksi hasil sinkron memakai kategori <b>Proyek</b> dan bertanda proyek; tidak bisa diedit di Keuangan (ubah dari tagihan di Proyek).</div>';
-      let ok = false;
-      openModal({ title: 'Sinkron ke Keuangan', body: h, foot: [{ label: 'Batal', cls: 'ghost' }, { label: 'Sinkronkan', onClick: () => { ok = true; if (add.length) wallet = $('#sfW').value; } }], onClose: () => res(ok) });
-    });
-    if (!proceed) return null;
-    await finTx(['txs', 'categories'], t => {
-      const ts = t.objectStore('txs');
-      add.forEach(x => ts.put({ ...x, wallet }));
-      upd.forEach(x => ts.put(x));
-      del.forEach(x => ts.delete(x.id));
-    });
-    if (add.length && wallet) await KV.set('jlp:cfg', JSON.stringify({ ...cfg, finWallet: wallet }));
-    const w = frameWin('keuangan'); if (w && w.render) { try { w.render(); } catch (_) {} }
-    syncKick(1500);
-    toast('Tersinkron: ' + add.length + ' baru, ' + upd.length + ' diperbarui, ' + del.length + ' dihapus');
-    return { add: add.length, upd: upd.length, del: del.length };
-  } catch (e) { console.error(e); toast('Sinkron gagal: ' + (e && e.message || 'kesalahan')); return null; }
+function openSurvey(info) { state.sv = info || null; return go('survei'); }
+// Bentuk minimal yang diterima Survei; daftar material dan RAB bawaan diisi oleh Survei sendiri.
+async function createSurvey({ name, client }) {
+  await flushFrame('survei');
+  const all = await KV.prefix('landspace:p:'), now = new Date(), year = now.getFullYear();
+  const iso = new Date(now.getTime() - now.getTimezoneOffset() * 60000).toISOString().slice(0, -1);
+  const last = Object.values(all).reduce((max, v) => { const m = /^LS-(\d{4})-(\d+)$/.exec((jparse(v, {}) || {}).code || ''); return m && +m[1] === year ? Math.max(max, +m[2]) : max; }, 0);
+  const id = 'jlp' + now.getTime().toString(36) + Math.random().toString(36).slice(2, 8), code = 'LS-' + year + '-' + String(last + 1).padStart(4, '0');
+  await KV.set('landspace:p:' + id, JSON.stringify({ id, code, name, client: client || '', address: '', surveyDate: iso, surveyor: '', type: 'outdoor', status: 'draft', coverPhotoId: null, notes: '', archived: false, createdAt: iso, updatedAt: iso, areas: [], photos: [], history: [{ at: iso, fieldId: null, summary: 'Proyek dibuat' }] }));
+  await KV.flush();
+  unloadFrame('survei');   // modul punya cache sendiri; muat ulang agar lembar baru terlihat
+  syncKick(1500);
+  return { id, code, name };
 }
 
 /* ========================== CADANGAN GABUNGAN ========================== */
@@ -198,7 +169,6 @@ async function finReplace(rows) {
     conv[s] = arr;
   }
   await finTx(FIN_STORES, t => FIN_STORES.forEach(n => { const os = t.objectStore(n); os.clear(); conv[n].forEach(x => os.put(x)); }));
-  await finSeed();
 }
 async function restoreFromFile(file) {
   try {
@@ -213,7 +183,6 @@ async function restoreFromFile(file) {
       const keep = {}; for (const k of ['jlp:sync:state', 'jlp:sync:conflicts']) { const v = await KV.get(k); if (v) keep[k] = v; }
       const kv = { ...data.kv, ...keep, '__migrated_ls': '1' }; await KV.replaceAll(kv); await finReplace(data.sepran);
     } else if (kind === 'sepran') {
-      unloadFrame('keuangan');
       await finReplace({ wallets: data.wallets, txs: data.txs, debts: data.debts, budgets: data.budgets, receipts: data.receipts, categories: data.categories, recurring: data.recurring, settings: data.settings });
     } else if (kind === 'proyek') {
       unloadFrame('proyek'); await KV.set('tamankerja:v1', JSON.stringify(data.p)); if (data.cfg) await KV.set('tk:cfg', JSON.stringify(data.cfg)); await KV.del('jlp:summary:proyek');
@@ -226,10 +195,10 @@ async function restoreFromFile(file) {
       if (data.tombstones && typeof data.tombstones === 'object') await KV.set('plantbase_tombstones_v14', JSON.stringify(data.tombstones));
       await KV.set('plantbase_material_migration_v182', '1'); await KV.set('plantbase_material_seeded_v181', '1');
     }
-    state.finUnlocked = false; state.sumTried = false;
+    state.sumTried = false;
     toast('Pemulihan berhasil', { ms: 3500 }); syncKick(1500);
     setView(kind === 'all' ? 'home' : state.view);
-    if (kind !== 'all' && ['home', 'setelan', 'terpadu'].includes(state.view)) setView(state.view);
+    if (kind !== 'all' && ['home', 'setelan'].includes(state.view)) setView(state.view);
   } catch (e) { console.error(e); toast('Pemulihan gagal: ' + (e && e.message || 'file tidak valid'), { ms: 5000 }); }
 }
 
@@ -253,10 +222,9 @@ async function resetAll() {
 /* ========================== API untuk modul + boot ========================== */
 window.JLPShell = {
   moduleReady(win) { Object.keys(MODS).forEach(n => { const m = MODS[n]; if (m.frame && m.frame.contentWindow === win && m.resolve) m.resolve(win); }); },
-  setFinLocked(l) { state.finUnlocked = !l; if (l) state.pinSet = true; },
   async listProjects() { await flushFrame('proyek'); const p = await kvJSON('tamankerja:v1', []); return (Array.isArray(p) ? p : []).map(x => ({ id: x.id, name: x.name, par: x.par || 0 })); },
-  localChanged(k) { if (k === 'fin' || Object.values(SK).includes(k) || String(k).indexOf('landspace:') === 0) syncKick(4000); },
-  pickCatalog, syncFinance, go, toast
+  localChanged(k) { if (Object.values(SK).includes(k) || String(k).indexOf('landspace:') === 0) syncKick(4000); },
+  pickCatalog, listSurveys, openSurvey, createSurvey, go, toast
 };
 
 async function boot() {

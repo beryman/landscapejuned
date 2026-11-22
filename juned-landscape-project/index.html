@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <title>Juned Landscape Project</title>
-<meta name="description" content="Juned Landscape Project: manajemen proyek lanskap, katalog tanaman &amp; material, dan keuangan dalam satu aplikasi.">
+<meta name="description" content="Juned Landscape Project: pantau proyek lanskap dari survei, penawaran, RAB, sampai opname dalam satu aplikasi.">
 <meta name="theme-color" content="#244d3b">
 <link rel="manifest" href="manifest.webmanifest">
 <link rel="icon" type="image/png" sizes="32x32" href="icons/favicon-32.png">
@@ -27,10 +27,10 @@
   </aside>
 
   <main id="stage">
+    <div id="svbar"><button type="button" class="btn ghost sm" id="svBack">‹ Kembali ke proyek</button><div id="svText"></div></div>
     <section class="view on" id="v-home" aria-label="Beranda"><div class="page" id="homeBody"></div></section>
-    <section class="view" id="v-terpadu" aria-label="Terpadu"><div class="page" id="terpaduBody"></div></section>
     <section class="view" id="v-setelan" aria-label="Pengaturan"><div class="page" id="setelanBody"></div></section>
-    <!-- iframe modul dibuat saat pertama dibuka: proyek, tanaman, keuangan -->
+    <!-- iframe modul dibuat saat pertama dibuka: proyek, survei, tanaman -->
   </main>
 
   <nav id="tabbar" aria-label="Navigasi utama"></nav>
@@ -41,6 +41,8 @@
 <noscript><p style="padding:20px;color:#fff">Aplikasi ini membutuhkan JavaScript.</p></noscript>
 <script src="lib/kv.js"></script>
 <script src="lib/common.js"></script>
+<script src="lib/survei-calc.js"></script>
+<script src="lib/sync-merge.js"></script>
 <script src="shell-core.js"></script>
 <script src="shell-pages.js"></script>
 <script src="shell-bridge.js"></script>
