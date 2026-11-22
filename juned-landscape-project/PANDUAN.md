@@ -16,6 +16,16 @@ Aplikasi untuk memantau proyek lanskap dari **Survei, Penawaran, RAB, Opname, sa
 4. **RAB:** tekan *Disetujui klien, lanjut RAB*. Item survei menjadi RAB, dan selisih overhead, profit, diskon, serta pajak menjadi satu baris penyesuaian sehingga total RAB sama dengan nilai penawaran.
 5. **Opname:** catat volume atau persen, lalu tagih owner dan bayar tukang sesuai progres.
 
+**Fitur tambahan (versi 1.7.0)**
+- **Nilai nego ikut ke PDF dan Excel.** Ubah *Nilai* di tab Penawaran, dan RAB di Survei menampilkan satu baris *Penyesuaian kesepakatan* sehingga total PDF dan Excel sama dengan yang dikirim ke klien. *Pakai total hitungan* di RAB Survei mengembalikannya.
+- **Revisi penawaran.** Tiap *Tandai terkirim* menjadi R1, R2, dan seterusnya. Mengubah nilai setelah terkirim memunculkan *Kirim ulang sebagai R2*, dan penawaran tidak bisa disetujui sebelum itu.
+- **Peringatan survei berubah.** Kalau total survei bergeser setelah RAB dibuat, muncul peringatan di atas tab proyek. Di tab *Tambah Kurang* pilih *Catat selisih sebagai tambah/kurang* atau abaikan.
+- **Tambah Kurang.** Perubahan di tengah proyek dicatat terpisah dari penawaran awal. Yang disetujui masuk RAB (jadi ikut opname dan tagihan), dan *Nilai kontrak terkini* tampil di atas proyek.
+- **Survei batu alam dan cat tekstur.** Saat membuat survei, pilih *Batu alam* atau *Cat tekstur*. Material dan item RAB langsung disiapkan dan aktif di semua bidang. Di lembar survei, halaman Material punya tombol *Paket material* untuk menambahkannya kemudian. Angka kebutuhan per m² (perekat 5 kg, nat 0,5 kg, sealer 0,3 liter; plamir 0,6 kg, cat dasar 0,1 liter, cat tekstur 1,2 kg, coating 0,1 liter) adalah perkiraan umum. **Sesuaikan dengan data produk dan hasil contoh di lapangan.**
+- **Isi harga dari katalog.** Di tab Survei, tombol itu mengisi harga item yang namanya cocok dengan katalog Tanaman. Item yang ragu atau namanya terlalu umum dilewati, dan harga yang sudah terisi tidak diubah.
+- **Paket pekerjaan.** Di tab Papan, satu ketukan mengisi tugas dari template beberapa jenis pekerjaan (misalnya taman + kolam).
+- **Laporan cepat.** Di tab Laporan: foto, catatan, dan volume dalam satu langkah. Volume otomatis masuk opname.
+
 Tahap proyek dihitung otomatis dari data ini. Saran pengembangan ada di **SARAN-PENGEMBANGAN.md**.
 
 **Keuangan sudah dilepas sejak versi 1.4.0.** Data keuangan lama tidak dihapus: tetap ada di perangkat, ikut file cadangan, dan tetap ada di Supabase.
@@ -69,9 +79,9 @@ Uji lokal di komputer: klik dua kali `jalankan-lokal.command` (Mac) atau jalanka
 index.html  shell-core.js  shell-pages.js  shell-bridge.js  shell-sync.js  shell.css
 sync-setup.sql  SINKRON.md  ONEDRIVE.md
 shell-onedrive.js  shell-space.js
-manifest.webmanifest  sw.js  icons/  lib/ (kv.js, common.js, survei-calc.js, sync-merge.js, embed.css, xlsx)
+manifest.webmanifest  sw.js  icons/  lib/ (kv.js, common.js, survei-calc.js, sync-merge.js, proyek-logic.js, embed.css, xlsx)
 apps/ proyek.html  tanaman.html  survei/ (aplikasi Flutter web)
-test/ survei-calc.test.js  sync-merge.test.js  sync-two-devices.js (uji browser, hanya localhost)
+test/ survei-calc.test.js  sync-merge.test.js  proyek-logic.test.js  sync-two-devices.js (uji browser, hanya localhost)
 ```
 
 - **Cadangan OneDrive** dan hemat ruang otomatis: lihat **ONEDRIVE.md**.

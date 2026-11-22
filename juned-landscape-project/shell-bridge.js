@@ -102,19 +102,58 @@ async function listSurveys() {
   return Object.values(all).map(v => { try { return JSON.parse(v); } catch (_) { return null; } }).filter(p => p && p.id != null && !p.archived).map(p => {
     const r = SurveiCalc.rabOf(p);
     const items = r.items.filter(x => x.included && x.q > 0).map(x => ({ n: x.n, k: 'Material', q: round2(x.q), u: x.u, h: Math.round(x.mat + x.lab), tw: Math.round(x.lab) }));
-    return { id: String(p.id), name: p.name, code: p.code || '', client: p.client || '', address: p.address || '', status: p.status || '', date: p.surveyDate || '', offerNumber: (p.rab && p.rab.offerNumber) || '', validUntil: (p.rab && p.rab.validUntil) || '', areas: (p.areas || []).length, grand: Math.round(r.grand), unpriced: items.filter(x => !x.h).length, items };
+    return { id: String(p.id), name: p.name, code: p.code || '', client: p.client || '', address: p.address || '', status: p.status || '', date: p.surveyDate || '', offerNumber: (p.rab && p.rab.offerNumber) || '', validUntil: (p.rab && p.rab.validUntil) || '', areas: (p.areas || []).length, grand: Math.round(r.grand), agreed: (p.rab && p.rab.negotiatedTotal) || null, unpriced: items.filter(x => !x.h).length, items, noPrice: r.items.filter(x => x.included && !x.mat && !x.lab).length };
   }).sort((a, b) => String(b.date).localeCompare(String(a.date)));
+}
+
+async function readSurvey(id) {
+  await flushFrame('survei');
+  const raw = await KV.get('landspace:p:' + id), rec = raw ? jparse(raw, null) : null;
+  return rec && rec.id != null ? rec : null;
+}
+async function writeSurvey(rec) {
+  rec.updatedAt = new Date(Date.now() - new Date().getTimezoneOffset() * 60000).toISOString().slice(0, -1);
+  await KV.set('landspace:p:' + rec.id, JSON.stringify(rec));
+  await KV.flush();
+  unloadFrame('survei');   // Survei menyimpan salinan di memorinya; muat ulang agar tidak menimpa perubahan ini
+  syncKick(1500);
+}
+// Nilai kesepakatan (nego) dari tab Penawaran supaya PDF dan Excel di Survei memakai angka yang sama. null = hapus.
+async function setSurveyAgreed(id, total) {
+  const rec = await readSurvey(id); if (!rec) return false;
+  rec.rab = rec.rab || {};
+  if (total == null) { if (rec.rab.negotiatedTotal == null) return true; delete rec.rab.negotiatedTotal; } else rec.rab.negotiatedTotal = total;
+  await writeSurvey(rec); return true;
+}
+// Harga katalog untuk item survei yang belum berharga. Waste katalog ikut dipakai bila material survei belum punya waste sendiri.
+async function catalogPrices(id) {
+  const rec = await readSurvey(id); if (!rec) return [];
+  const pb = await readPB(), items = SurveiCalc.rabOf(rec).items.filter(x => x.included);
+  const byItem = new Map((rec.rab && rec.rab.items || []).map(i => [i.id, i]));
+  const waste = it => { const m = (rec.materials || []).find(x => x.id === (byItem.get(it.id) || {}).materialId); return m && m.waste > 0 ? 0 : 1; };
+  const cat = new Map(pb.materials.map(m => [m.name, m]));
+  return ProyekLogic.matchCatalog(items, pb.materials.map(m => ({ name: m.name, price: m.price, labor: m.labor }))).map(x => {
+    const c = cat.get(x.cat), f = 1 + waste(items.find(i => i.id === x.id)) * num(c && c.waste) / 100;
+    return { id: x.id, n: items.find(i => i.id === x.id).n, cat: x.cat, mat: Math.round(x.mat * f), lab: x.lab };
+  });
+}
+async function applyCatalogPrices(id, list) {
+  const rec = await readSurvey(id); if (!rec || !rec.rab) return 0;
+  let n = 0;
+  list.forEach(m => { const i = (rec.rab.items || []).find(x => x.id === m.id); if (i && !i.priceMaterial && !i.priceLabor) { i.priceMaterial = m.mat; i.priceLabor = m.lab; n++; } });
+  if (n) await writeSurvey(rec);
+  return n;
 }
 
 function openSurvey(info) { state.sv = info || null; return go('survei'); }
 // Bentuk minimal yang diterima Survei; daftar material dan RAB bawaan diisi oleh Survei sendiri.
-async function createSurvey({ name, client }) {
+async function createSurvey({ name, client, pack }) {
   await flushFrame('survei');
   const all = await KV.prefix('landspace:p:'), now = new Date(), year = now.getFullYear();
   const iso = new Date(now.getTime() - now.getTimezoneOffset() * 60000).toISOString().slice(0, -1);
   const last = Object.values(all).reduce((max, v) => { const m = /^LS-(\d{4})-(\d+)$/.exec((jparse(v, {}) || {}).code || ''); return m && +m[1] === year ? Math.max(max, +m[2]) : max; }, 0);
   const id = 'jlp' + now.getTime().toString(36) + Math.random().toString(36).slice(2, 8), code = 'LS-' + year + '-' + String(last + 1).padStart(4, '0');
-  await KV.set('landspace:p:' + id, JSON.stringify({ id, code, name, client: client || '', address: '', surveyDate: iso, surveyor: '', type: 'outdoor', status: 'draft', coverPhotoId: null, notes: '', archived: false, createdAt: iso, updatedAt: iso, areas: [], photos: [], history: [{ at: iso, fieldId: null, summary: 'Proyek dibuat' }] }));
+  await KV.set('landspace:p:' + id, JSON.stringify({ id, code, name, client: client || '', address: '', surveyDate: iso, surveyor: '', type: 'outdoor', status: 'draft', coverPhotoId: null, notes: pack === 'batu_alam' ? 'Jenis pekerjaan: batu alam' : pack === 'tekstur' ? 'Jenis pekerjaan: cat tekstur' : '', archived: false, createdAt: iso, updatedAt: iso, areas: [], photos: [], history: [{ at: iso, fieldId: null, summary: 'Proyek dibuat' }] }));
   await KV.flush();
   unloadFrame('survei');   // modul punya cache sendiri; muat ulang agar lembar baru terlihat
   syncKick(1500);
@@ -224,7 +263,7 @@ window.JLPShell = {
   moduleReady(win) { Object.keys(MODS).forEach(n => { const m = MODS[n]; if (m.frame && m.frame.contentWindow === win && m.resolve) m.resolve(win); }); },
   async listProjects() { await flushFrame('proyek'); const p = await kvJSON('tamankerja:v1', []); return (Array.isArray(p) ? p : []).map(x => ({ id: x.id, name: x.name, par: x.par || 0 })); },
   localChanged(k) { if (Object.values(SK).includes(k) || String(k).indexOf('landspace:') === 0) syncKick(4000); },
-  pickCatalog, listSurveys, openSurvey, createSurvey, go, toast
+  pickCatalog, listSurveys, openSurvey, createSurvey, setSurveyAgreed, catalogPrices, applyCatalogPrices, go, toast
 };
 
 async function boot() {

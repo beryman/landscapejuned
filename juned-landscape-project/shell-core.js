@@ -1,6 +1,6 @@
 /* Juned Landscape Project - shell: utilitas, penyimpanan, navigasi, iframe modul, PWA */
 'use strict';
-const APP_VERSION = '1.6.0';
+const APP_VERSION = '1.7.0';
 const $ = (s, r = document) => r.querySelector(s);
 const $$ = (s, r = document) => Array.from(r.querySelectorAll(s));
 const esc = s => String(s == null ? '' : s).replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
@@ -181,7 +181,7 @@ function setView(name, replace) {
     const s = state.sv;
     $('#svText').innerHTML = s ? '<b>' + esc(s.project) + '</b><small>Survei ' + esc(s.code || s.name) + '</small>' : '<b>Survei</b><small>Semua lembar survei</small>';
     // Juga berjalan setelah modul dimuat ulang oleh sinkron, agar tetap di survei yang sama.
-    loadFrame('survei').then(w => { if (state.view === 'survei' && state.sv === s && w.JLP && w.JLP.openSurvey) return w.JLP.openSurvey(s ? s.id : ''); }).catch(e => console.error(e));
+    loadFrame('survei').then(w => { if (state.view === 'survei' && state.sv === s && w.JLP && w.JLP.openSurvey) { const pk = s && s.pack || ''; if (s) s.pack = ''; return w.JLP.openSurvey(s ? s.id : '', pk); } }).catch(e => console.error(e));
   }
   updateNav();
   if (prev !== name && MODS[prev]) flushFrame(prev);

@@ -23,15 +23,17 @@ Arah aplikasi: memantau setiap proyek dari **Survei, Penawaran, RAB, Opname, sam
 4. **Penyiapan satu ketukan.** Pemilik membuat tautan atau QR, mandor tinggal memindai.
 
 ### 2. Cara kerja
-5. **Revisi penawaran.** Simpan riwayat R1, R2, R3 agar jelas harga mana yang disetujui.
+5. ~~Revisi penawaran.~~ **Selesai di versi 1.7.0.**
 6. **Termin pembayaran.** Atur termin di awal (misalnya DP 30%, 40%, 30%) dan picu pengingat tagih saat progres tercapai.
-7. **Pekerjaan tambah kurang (CCO).** Perubahan di tengah proyek dicatat terpisah dari RAB awal.
-8. **Harga Survei dari Katalog.** Harga material cukup diisi sekali.
+7. ~~Pekerjaan tambah kurang (CCO).~~ **Selesai di versi 1.7.0**, termasuk peringatan saat survei berubah setelah RAB dibuat dan nilai nego ke PDF dan Excel.
+8. ~~Harga Survei dari Katalog.~~ **Selesai di versi 1.7.0** (pencocokan per nama, yang ragu dilewati).
 9. **Berita acara opname.** PDF per termin yang siap ditandatangani owner.
 
 ### 3. Lapangan dan kepraktisan
-10. **Laporan harian 30 detik.** Foto, pilih item, isi volume, kirim. Tombol besar untuk HP.
+10. ~~Laporan harian 30 detik.~~ **Selesai di versi 1.7.0** (Laporan cepat, volume langsung masuk opname). Paket pekerjaan satu ketukan di Papan juga selesai.
 11. **Foto sebelum dan sesudah** per area, langsung dari data Survei.
+11b. **Pembaruan langsung antar perangkat (belum dikerjakan).** Orang yang sedang membuka Proyek masih harus menekan *Terapkan*. Menyegarkan modul tanpa memuat ulang berisiko menghapus isian yang sedang diketik, jadi perlu dikerjakan hati-hati.
+11c. **Survei batu alam dan tekstur: kebutuhan bahan dan keterangan per bidang.** Angka per m² dan paketnya sudah ada, tetapi pilihan jenis batu, pola pasang, dan kondisi dinding per bidang belum.
 12. **Pengingat otomatis:** penawaran belum dijawab 3 hari, tugas terlambat, sesi OneDrive habis.
 13. **Tautan pantau untuk klien.** Halaman baca-saja berisi progres dan foto, tanpa harga internal.
 
