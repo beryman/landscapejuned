@@ -51,6 +51,8 @@ async function loginAccept(j) {
     if (!ok) return false;
     await KV.set('jlp:sync:state', JSON.stringify({ cursor: null, base: {}, blobs: {} }));
     await KV.set('jlp:sync:conflicts', '[]');
+    await KV.del(SK.gem);   // kunci Gemini milik akun lama
+    if (MODS.tanaman.frame) unloadFrame('tanaman');
     for (const k of Object.keys(await KV.prefix(SNAP))) await KV.del(k);
   }
   if (uid) LS.set('jlp_sync_uid', uid);

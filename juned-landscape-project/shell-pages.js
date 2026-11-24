@@ -79,7 +79,7 @@ async function renderSettings() {
   let usage = '', persisted = '–';
   try { const e = await navigator.storage.estimate(); usage = (e.usage / 1048576).toFixed(1) + ' MB dari ± ' + (e.quota / 1048576 >= 1024 ? (e.quota / 1073741824).toFixed(1) + ' GB' : Math.round(e.quota / 1048576) + ' MB'); } catch (_) { usage = 'tidak diketahui'; }
   try { persisted = (await navigator.storage.persisted()) ? 'Ya' : 'Belum'; } catch (_) {}
-  const inst = JLP.isStandalone(), who = (await KV.get('tk:me')) || '';
+  const inst = JLP.isStandalone(), who = (await KV.get('tk:me')) || '', gm = await gmCfg();
   body.innerHTML = '<div class="ph"><div><h1>Pengaturan</h1><p>Juned Landscape Project · versi ' + APP_VERSION + '</p></div></div>' +
     '<div class="split">' +
     '<div class="card"><h3>Nama di perangkat ini</h3><p class="small">Semua perangkat memakai akun yang sama. Nama ini yang tercatat di riwayat aktivitas proyek, jadi jelas siapa mengubah apa.</p><label class="f"><span>Nama</span><input type="text" id="stMe" value="' + esc(who === 'Anggota' ? '' : who) + '" placeholder="mis. Pak Juned, Mandor Budi" autocomplete="name"></label></div>' +
@@ -87,13 +87,14 @@ async function renderSettings() {
     '<div class="card"><h3>Cadangan &amp; pemulihan</h3><p class="small">Satu file mencakup semua data, termasuk data keuangan lama yang tersimpan di perangkat ini.<br>Cadangan terakhir: <b>' + (lb ? lb.toLocaleDateString('id-ID', { day: 'numeric', month: 'long', year: 'numeric' }) : 'belum pernah') + '</b></p>' +
     '<div class="row"><button type="button" class="btn" id="stBackup">Unduh cadangan</button><label class="btn ghost" style="cursor:pointer">Pulihkan dari file<input type="file" id="stRestore" accept=".json,.txt,.gz,application/json,application/gzip,text/plain" hidden></label></div>' +
     '<p class="small" style="margin-bottom:0">Bisa juga memulihkan file cadangan dari aplikasi lama (Taman Kerja, PlantBase, Sepran): format dikenali otomatis dan hanya menggantikan modul terkait.</p></div>' +
+    gmCardHTML(gm) +
     '<div class="card"><h3>Penyimpanan</h3><div class="kv" style="margin:8px 0"><span>Terpakai</span><b>' + esc(usage) + '</b><span>Penyimpanan permanen</span><b>' + persisted + '</b></div><div class="row"><button type="button" class="btn ghost sm" id="stPersist">Minta penyimpanan permanen</button></div><p class="small" style="margin-bottom:0">iPhone/iPad: pasang ke layar utama agar Safari tidak membersihkan data yang lama tidak dibuka.</p></div>' +
     '<div class="card"><h3>Pembaruan aplikasi</h3><p class="small">Versi terpasang: <b>' + APP_VERSION + '</b>. Pembaruan diunduh otomatis saat online.</p><div class="row"><button type="button" class="btn ghost sm" id="stUpdate">Periksa pembaruan</button><button type="button" class="btn ghost sm" id="stRefresh">Segarkan &amp; bersihkan cache</button></div><p class="small" style="margin-bottom:0">Membersihkan cache tidak menghapus data Anda.</p></div>' +
     '<details class="dd" style="grid-column:1/-1"' + (syncConfigured() || location.hash.includes('sync') ? ' open' : '') + '><summary>Lanjutan: sinkron antar perangkat dan cadangan cloud</summary><div class="split" style="margin-top:10px">' + syncCardHTML() + gdCardHTML() + odCardHTML() + '</div></details>' +
     '<div class="card"><h3>Hapus semua data</h3><p class="small">Menghapus seluruh data di perangkat ini, termasuk data keuangan lama. Buat cadangan lebih dulu.</p><button type="button" class="btn danger sm" id="stReset">Hapus semua data…</button></div>' +
     '<div class="card"><h3>Tentang</h3><p class="small" style="margin-bottom:0">Juned Landscape Project memantau proyek lanskap dari <b>Survei</b> (LANDSPACE), penawaran, RAB, sampai opname di <b>Proyek</b> (Taman Kerja), dengan <b>Katalog</b> tanaman dan material (PlantBase). Data tersimpan di perangkat; sinkron antar perangkat bersifat opsional.</p></div>' +
     '</div>';
-  bindSyncCard(); bindGdCard(); bindOdCard(); bindSpaceBlock(); loadSpaceBox();
+  bindGmCard(); bindSyncCard(); bindGdCard(); bindOdCard(); bindSpaceBlock(); loadSpaceBox();
   const on = (id, fn) => { const el = $('#' + id); if (el) el.onclick = fn; };
   const me = $('#stMe');
   me.onchange = () => { const w = frameWin('proyek'); (w && w.KV ? w.KV : KV).ls.setItem('tk:me', me.value.trim() || 'Anggota'); toast('Nama disimpan'); };

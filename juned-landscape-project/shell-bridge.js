@@ -219,7 +219,7 @@ async function restoreFromFile(file) {
     await flushAll();
     if (kind === 'all') {
       Object.keys(MODS).forEach(unloadFrame);
-      const keep = {}; for (const k of ['jlp:sync:state', 'jlp:sync:conflicts', 'jlp:sync:gemini']) { const v = await KV.get(k); if (v) keep[k] = v; }
+      const keep = await KV.prefix('jlp:sync:');   // status, konflik, salinan dasar penggabungan, kunci Gemini: bukan bagian dari cadangan
       const kv = { ...data.kv, ...keep, '__migrated_ls': '1' }; await KV.replaceAll(kv); await finReplace(data.sepran);
     } else if (kind === 'sepran') {
       await finReplace({ wallets: data.wallets, txs: data.txs, debts: data.debts, budgets: data.budgets, receipts: data.receipts, categories: data.categories, recurring: data.recurring, settings: data.settings });

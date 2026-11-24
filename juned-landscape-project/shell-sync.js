@@ -171,7 +171,12 @@ async function applyColl(def, ups, dels, lm) {
     for (const id of dels) { const loc = lm.get(id); await KV.del(def.prefix + (loc ? loc.id : id)); }
     return;
   }
-  if (def.single) { const r = ups.get('cfg'); if (r) await KV.set(def.key, JSON.stringify(r)); return; }
+  if (def.single) {
+    const r = ups.get('cfg');
+    if (r) await KV.set(def.key, JSON.stringify(r));
+    else if (dels.has('cfg')) await KV.del(def.key);   // dihapus di perangkat lain (mis. kunci Gemini dihapus)
+    return;
+  }
   const arr = jparse(await KV.get(def.key), []), cur = Array.isArray(arr) ? arr : [], out = [], seen = new Set();
   for (const x of cur) {
     const id = x && x.id != null ? String(x.id) : null;
@@ -475,7 +480,7 @@ function bindSyncCard() {
   on('sbNow', () => { LS.set('jlp_sync_on', '1'); syncStart(); });
   on('sbCopy', async () => { try { await navigator.clipboard.writeText(connCode()); toast('Kode koneksi disalin'); } catch (_) { prompt('Salin kode koneksi:', connCode()); } });
   on('sbLink', async () => { const u = location.origin + location.pathname + '#/setelan?cfg=' + encodeURIComponent(connCode()); try { await navigator.clipboard.writeText(u); toast('Tautan penyiapan disalin'); } catch (_) { prompt('Salin tautan:', u); } });
-  on('sbOut', async () => { if (!await confirmBox('Keluar dari akun sinkron di perangkat ini? Data lokal tetap ada.', { title: 'Keluar' })) return; LS.del('jlp_sync_auth'); LS.del('jlp_login_skip'); syncLoadCfg(); clearInterval(sync.timer); clearTimeout(sync.dt); setSyncStatus('off'); renderSettings(); loginOpen(); });
+  on('sbOut', async () => { if (!await confirmBox('Keluar dari akun sinkron di perangkat ini? Data lokal tetap ada. Kunci Gemini akun ini dihapus dari perangkat dan kembali saat Anda masuk lagi.', { title: 'Keluar' })) return; await gmForgetLocal(); LS.del('jlp_sync_auth'); LS.del('jlp_login_skip'); syncLoadCfg(); clearInterval(sync.timer); clearTimeout(sync.dt); setSyncStatus('off'); renderSettings(); loginOpen(); });
   on('sbReset', async () => { if (!await confirmBox('Reset catatan sinkron di perangkat ini? Sinkron berikutnya akan mencocokkan ulang semua data (versi server diutamakan bila berbeda; salinan lokal masuk Konflik).', { title: 'Reset status sinkron', ok: 'Reset' })) return; sync.st = { cursor: null, base: {}, blobs: {} }; await saveSyncState(); toast('Status direset'); syncRun(); });
   const au = $('#sbAuto'); if (au) au.onchange = () => { LS.set('jlp_sync_on', au.checked ? '1' : '0'); if (au.checked) syncStart(); else { clearInterval(sync.timer); setSyncStatus('paused'); } };
   $$('[data-cu]').forEach(b => b.onclick = () => useConflict(b.dataset.cu));

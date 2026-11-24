@@ -85,7 +85,7 @@
         if (!out.ok) { useMsg.textContent = out.reason; renderUse(); }
       } catch (err) { useMsg.textContent = 'Gagal menyimpan: ' + err.message; renderUse(); }
     });
-    els.settingsToggle.hidden = true; els.settings.hidden = true;   // kunci diatur di Katalog › Pengaturan & Backup
+    els.settingsToggle.hidden = true; els.settings.hidden = true;   // kunci diatur di Pengaturan utama
   }
 
   // The engine normalises to clockwise; row i always maps to solved edge i when the sketch was clockwise.
@@ -349,7 +349,7 @@
       els.img.alt = state.image.url ? 'Sketsa yang kamu unggah' : 'Garis bidang yang terbaca dari PDF';
       els.sketchNote.textContent = sketch.notes.length ? `Catatan yang terbaca: ${sketch.notes.join(', ')}` : 'Periksa nomor sisi di sketsa dengan tabel di bawah.';
     } catch (err) {
-      state.error = host ? err.message.replace('di Pengaturan', 'di Katalog › Pengaturan & Backup') : err.message;
+      state.error = host ? err.message.replace('di Pengaturan', 'di Pengaturan utama (menu kiri), bagian Gemini') : err.message;
     } finally {
       state.busy = false;
       els.rows.closest('table').inert = false;
