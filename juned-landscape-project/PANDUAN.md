@@ -57,6 +57,13 @@ Aplikasi untuk memantau proyek lanskap dari **Survei, Penawaran, RAB, Opname, sa
 **Perbaikan tampilan HP (versi 1.12.1)** — lembar Survei
 - Di layar HP (lebar di bawah 600 px) huruf sedikit dikecilkan, kontrol dipadatkan, dan bilah menu atas dipendekkan dari 80 ke 58 px. Ruang isi bertambah dan ukurannya sepadan dengan tab lain. Kolom isian tetap 16 px agar iPhone tidak memperbesar halaman sendiri saat mengetik. Tampilan desktop tidak berubah.
 
+**Fitur tambahan (versi 1.13.0)** — Sketsa ke gambar kerja
+- **Tombol baru di panel bidang.** Di Kalkulasi, pilih satu bidang lalu tekan *Sketsa berukuran (gambar kerja)*. Tombol *Gambar bentuk manual (kanvas)* yang lama tetap ada.
+- **Cara pakai.** Unggah foto atau PDF sketsa yang ukurannya ditulis di tiap sisi, atau gambar langsung di tab *Gambar*. Gemini membaca titik dan angkanya, lalu aplikasi merakit bentuk dari angka tertulis. Angka yang kosong dihitung otomatis, ukuran bisa diedit di tabel *Ukuran sisi*, dan gambar kerja bisa diekspor ke PDF, PNG, atau DXF.
+- **Dipakai di bidang.** Tombol *Pakai di bidang* di bawah mengubah bidang menjadi polygon (meter) dengan luas dari sketsa. Bentuk yang ukurannya bertentangan tidak bisa dipakai: tombolnya terkunci dan alasannya ditulis. Bila ada ukuran perkiraan, bidang tetap bisa dipakai tetapi catatannya mencantumkan itu. Sisi lengkung disimpan sebagai titik-titik pendek, dan bidang yang punya luas manual tidak diubah luas manualnya (peringatan ditampilkan).
+- **Kunci Gemini** diambil dari Katalog › Pengaturan & Backup, jadi tidak perlu mengisi lagi. Model dipilih dari daftar yang sama, dan model yang tidak ada dilewati.
+- Kodenya ada di `apps/sketsa/` (tool), `lib/sketsa-field.js` (konversi ke bidang), dan `shell-sketsa.js` (jembatan). Uji tool: `node --test test/sketsa/`.
+
 Tahap proyek dihitung otomatis dari data ini. Saran pengembangan ada di **SARAN-PENGEMBANGAN.md**.
 
 **Keuangan sudah dilepas sejak versi 1.4.0.** Data keuangan lama tidak dihapus: tetap ada di perangkat, ikut file cadangan, dan tetap ada di Supabase.
@@ -107,13 +114,13 @@ Uji lokal di komputer: klik dua kali `jalankan-lokal.command` (Mac) atau jalanka
 
 ## Struktur
 ```
-index.html  shell-core.js  shell-pages.js  shell-bridge.js  shell-sync.js  shell-login.js  shell.css
+index.html  shell-core.js  shell-pages.js  shell-bridge.js  shell-sync.js  shell-login.js  shell-sketsa.js  shell.css
 sync-setup.sql  SINKRON.md  ONEDRIVE.md
 shell-onedrive.js  shell-space.js
 manifest.webmanifest  sw.js  icons/  config.js  shell-gdrive.js  GOOGLE-DRIVE.md
-lib/ (kv.js, common.js, survei-calc.js, sync-merge.js, proyek-logic.js, gemini-plant.js, katalog-logic.js, gdrive-backup.js, login-logic.js, embed.css, xlsx)
-apps/ proyek.html  tanaman.html  survei/ (aplikasi Flutter web)
-test/ survei-calc, sync-merge, proyek-logic, gemini-plant, katalog-logic, login-logic, gdrive-backup (*.test.js, jalankan dengan node)  sync-two-devices.js (uji browser, hanya localhost)
+lib/ (kv.js, common.js, survei-calc.js, sync-merge.js, proyek-logic.js, gemini-plant.js, katalog-logic.js, gdrive-backup.js, login-logic.js, sketsa-field.js, embed.css, xlsx)
+apps/ proyek.html  tanaman.html  sketsa/ (tool sketsa)  survei/ (aplikasi Flutter web)
+test/ survei-calc, sync-merge, proyek-logic, gemini-plant, katalog-logic, login-logic, sketsa-field, gdrive-backup (*.test.js, jalankan dengan node)  sync-two-devices.js (uji browser, hanya localhost)
 ```
 
 - **Cadangan OneDrive** dan hemat ruang otomatis: lihat **ONEDRIVE.md**.

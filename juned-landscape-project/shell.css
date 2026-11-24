@@ -229,3 +229,10 @@ details.dd[style*="grid-column"]{background:var(--paper)}
   .lg-side{display:block;padding:24px 20px calc(24px + var(--sab))}
   .lg-form{margin:0 auto}
 }
+
+/* ---------- Tool sketsa (di atas Survei) ---------- */
+#sketsaLayer{position:absolute;inset:0;z-index:6;display:flex;flex-direction:column;background:var(--cream)}
+#sketsaLayer .skbar{flex:none;display:flex;align-items:center;gap:12px;padding:10px 14px;background:var(--paper);border-bottom:1px solid var(--line)}
+#sketsaLayer .sktxt{display:flex;flex-direction:column;min-width:0}
+#sketsaLayer .sktxt small{color:var(--mut);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+#sketsaLayer iframe{flex:1;min-height:0;width:100%;border:0;background:var(--cream)}

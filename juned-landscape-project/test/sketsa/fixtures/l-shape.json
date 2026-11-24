@@ -1,0 +1,20 @@
+{
+  "unit": null,
+  "vertices": [
+    { "x": 190, "y": 113, "interiorAngle": null },
+    { "x": 455, "y": 110, "interiorAngle": null },
+    { "x": 458, "y": 255, "interiorAngle": null },
+    { "x": 685, "y": 248, "interiorAngle": null },
+    { "x": 698, "y": 405, "interiorAngle": null },
+    { "x": 190, "y": 410, "interiorAngle": null }
+  ],
+  "edges": [
+    { "length": 12, "kind": "line", "radius": null, "bulge": "out" },
+    { "length": 14, "kind": "line", "radius": null, "bulge": "out" },
+    { "length": 13, "kind": "line", "radius": null, "bulge": "out" },
+    { "length": null, "kind": "line", "radius": null, "bulge": "out" },
+    { "length": 50, "kind": "line", "radius": null, "bulge": "out" },
+    { "length": 26, "kind": "line", "radius": null, "bulge": "out" }
+  ],
+  "notes": []
+}
