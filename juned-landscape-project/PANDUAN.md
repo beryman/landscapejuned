@@ -64,6 +64,12 @@ Aplikasi untuk memantau proyek lanskap dari **Survei, Penawaran, RAB, Opname, sa
 - **Kunci Gemini** diambil dari Katalog › Pengaturan & Backup, jadi tidak perlu mengisi lagi. Model dipilih dari daftar yang sama, dan model yang tidak ada dilewati.
 - Kodenya ada di `apps/sketsa/` (tool), `lib/sketsa-field.js` (konversi ke bidang), dan `shell-sketsa.js` (jembatan). Uji tool: `node --test test/sketsa/`.
 
+**Perbaikan tampilan (versi 1.14.0)** — lembar Survei, hasil audit
+- Kalkulasi: masalah ditulis di atas tabel ("perlu dicek: ...") dan sel yang salah diberi ikon, tidak hanya warna. Tabel memenuhi lebar kartu, header sejajar dengan isinya, kotak centang material punya area ketuk 44 px, dan tabel yang baru dibuat memberi petunjuk langkah berikutnya.
+- Tombol *Sketsa berukuran* kini terlihat di atas tabel Kalkulasi (bekerja pada bidang yang dipilih).
+- Aksesibilitas: pohon aksesibilitas Flutter diaktifkan, warna penanda luas manual digelapkan agar terbaca, dan em dash dihapus dari teks.
+- Arah desain dan alasan tiap keputusan ada di **DESIGN.md**.
+
 Tahap proyek dihitung otomatis dari data ini. Saran pengembangan ada di **SARAN-PENGEMBANGAN.md**.
 
 **Keuangan sudah dilepas sejak versi 1.4.0.** Data keuangan lama tidak dihapus: tetap ada di perangkat, ikut file cadangan, dan tetap ada di Supabase.
