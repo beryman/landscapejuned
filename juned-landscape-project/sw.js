@@ -1,9 +1,9 @@
 /* Juned Landscape Project - service worker (offline + pembaruan terkontrol) */
-const VERSION = '1.15.1';
+const VERSION = '1.15.2';
 const CACHE = 'jlp-' + VERSION;
 const RUNTIME = 'jlp-runtime';
 // Naikkan HANYA saat apps/survei dibangun ulang: bundelnya besar dan berkasnya harus dari build yang sama.
-const SURVEI = 'jlp-survei-8';
+const SURVEI = 'jlp-survei-9';
 const CORE = [
   './', 'index.html', 'config.js', 'manifest.webmanifest',
   'shell.css', 'shell-core.js', 'shell-pages.js', 'shell-bridge.js', 'shell-sync.js', 'shell-login.js', 'shell-gemini.js', 'shell-sketsa.js', 'shell-onedrive.js', 'shell-gdrive.js', 'shell-space.js',

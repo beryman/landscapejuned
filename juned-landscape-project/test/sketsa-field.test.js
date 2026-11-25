@@ -172,4 +172,47 @@ t('kedalaman ditulis ke bidang dan dicatat; tanpa kedalaman, kedalaman lama tida
   assert.strictEqual(r2.areas[0].fields[0].depth, 0.3);
 });
 
+// ---------- sketsa disimpan agar bisa dibuka lagi; gambar kerja jadi foto bidang ----------
+t('sketsa berukuran disimpan di bidang dan bisa dibaca kembali utuh', () => {
+  const r = rec();
+  const sketch = { unit: 'cm', vertices: [{ x: 1, y: 2, interiorAngle: null }], edges: [{ length: 5, kind: 'line', radius: null, bulge: 'out' }], notes: ['-100'] };
+  S.applyToField(r, 'f1', { ...good(), sketch });
+  assert.deepStrictEqual(JSON.parse(JSON.stringify(r.areas[0].fields[0].sketch)), sketch);
+});
+
+t('gambar kerja disimpan sebagai foto yang terikat ke bidang dan area-nya', () => {
+  const r = rec();
+  const out = S.applyToField(r, 'f1', { ...good(), photo: { dataUrl: 'data:image/png;base64,QUJD', width: 2400, height: 1600 } });
+  assert.ok(out.ok && out.photoFile && out.photoData === 'data:image/png;base64,QUJD');
+  const ph = r.photos.filter(p => p.fieldId === 'f1');
+  assert.strictEqual(ph.length, 1);
+  assert.strictEqual(ph[0].file, out.photoFile);
+  assert.strictEqual(ph[0].areaId, 'a1');
+  assert.strictEqual(ph[0].width, 2400);
+  assert.match(ph[0].name, /gambar kerja/i);
+});
+
+t('menerapkan lagi mengganti foto gambar kerja bidang itu, tidak menumpuk', () => {
+  const r = rec();
+  S.applyToField(r, 'f1', { ...good(), photo: { dataUrl: 'data:image/png;base64,AAAA', width: 10, height: 10 } });
+  S.applyToField(r, 'f1', { ...good(), photo: { dataUrl: 'data:image/png;base64,BBBB', width: 20, height: 20 } });
+  const ph = r.photos.filter(p => p.fieldId === 'f1');
+  assert.strictEqual(ph.length, 1);
+  assert.strictEqual(ph[0].width, 20);
+});
+
+t('foto bidang lain tidak ikut tersentuh', () => {
+  const r = rec();
+  r.photos = [{ id: 'x', file: 'lain.jpg', fieldId: 'f2', areaId: 'a1', name: 'Foto lapangan' }];
+  S.applyToField(r, 'f1', { ...good(), photo: { dataUrl: 'data:image/png;base64,AAAA', width: 10, height: 10 } });
+  assert.ok(r.photos.some(p => p.id === 'x' && p.file === 'lain.jpg'));
+});
+
+t('tanpa gambar kerja tidak ada foto yang dibuat', () => {
+  const r = rec();
+  const out = S.applyToField(r, 'f1', good());
+  assert.strictEqual(out.photoFile, undefined);
+  assert.strictEqual(r.photos, undefined);
+});
+
 console.log('sketsa-field OK');

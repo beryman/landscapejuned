@@ -82,7 +82,10 @@
       if (!shell || !shell.applySketch) { useMsg.textContent = 'Tidak tersambung ke aplikasi Juned Landscape. Tutup lalu buka lagi dari bidang.'; return; }
       useBtn.disabled = true; useMsg.textContent = 'Menyimpan ke bidang…';
       try {
-        const out = await shell.applySketch({ survey: host.survey, field: host.field }, r);
+        const scale = state.scale === 'auto' ? Export.pickScale(state.solved, state.paper, state.unit).scale : Number(state.scale);
+        const canvas = await drawingCanvas(state.solved, scale, state.solved.status === 'underdetermined' ? 'Ada ukuran perkiraan (~)' : '');
+        const photo = { dataUrl: canvas.toDataURL('image/png'), width: canvas.width, height: canvas.height };
+        const out = await shell.applySketch({ survey: host.survey, field: host.field }, { ...r, sketch: { ...state.sketch, unit: state.unit }, photo });
         if (!out.ok) { useMsg.textContent = out.reason; renderUse(); }
       } catch (err) { useMsg.textContent = 'Gagal menyimpan: ' + err.message; renderUse(); }
     });
@@ -274,6 +277,20 @@
     setTimeout(() => URL.revokeObjectURL(url), 1000);
   }
 
+  // Gambar kerja sebagai kanvas (dipakai ekspor PNG dan disimpan sebagai foto bidang di Survei).
+  async function drawingCanvas(s, scale, note) {
+    const w = 2400;
+    const svg = Render.toSVG(s, { unit: state.unit, title: 'Gambar kerja', date: today(), scaleLabel: `1:${scale}`, note, pixelWidth: w });
+    const img = new Image();
+    img.src = URL.createObjectURL(new Blob([svg], { type: 'image/svg+xml' }));
+    await img.decode();
+    const h = Number(svg.match(/ height="(\d+)"/)[1]);
+    const canvas = Object.assign(document.createElement('canvas'), { width: w, height: h });
+    canvas.getContext('2d').drawImage(img, 0, 0, w, h);
+    URL.revokeObjectURL(img.src);
+    return canvas;
+  }
+
   async function exportAs(kind) {
     const s = state.solved;
     if (s.status === 'conflict' || (kind !== 'dxf' && !currentScale().fits)) return;
@@ -285,16 +302,7 @@
     } else if (kind === 'dxf') {
       download(new Blob([Export.toDXF(s, state.unit, note)], { type: 'application/dxf' }), `${name}.dxf`);
     } else if (kind === 'png') {
-      const w = 2400;
-      const svg = Render.toSVG(s, { unit: state.unit, title: 'Gambar kerja', date: today(), scaleLabel: `1:${scale}`, note, pixelWidth: w });
-      const img = new Image();
-      img.src = URL.createObjectURL(new Blob([svg], { type: 'image/svg+xml' }));
-      await img.decode();
-      const h = Number(svg.match(/ height="(\d+)"/)[1]);
-      const canvas = Object.assign(document.createElement('canvas'), { width: w, height: h });
-      canvas.getContext('2d').drawImage(img, 0, 0, w, h);
-      URL.revokeObjectURL(img.src);
-      canvas.toBlob((blob) => download(blob, `${name}.png`), 'image/png');
+      (await drawingCanvas(s, scale, note)).toBlob((blob) => download(blob, `${name}.png`), 'image/png');
     }
     els.exportMsg.textContent = `${kind.toUpperCase()} diunduh: ${name}.${kind}`;
   }
@@ -520,4 +528,23 @@
 
   adoptClockwise();
   update({ rebuildRows: true });
+  if (host) loadSaved();
+
+  // Bidang yang sudah pernah diisi dari sketsa: angkanya dimuat lagi untuk diubah.
+  async function loadSaved() {
+    try {
+      await KV.ready;
+      const rec = JSON.parse(KV.ls.getItem('landspace:p:' + host.survey) || 'null');
+      const f = ((rec && rec.areas) || []).flatMap((a) => a.fields || []).find((x) => x.id === host.field);
+      if (!f || !f.sketch) return;
+      state.sketch = structuredClone(f.sketch);
+      state.unit = f.sketch.unit || 'cm';
+      els.unit.value = state.unit;
+      state.depth = SketsaField.depthFromNotes(state.sketch.notes);
+      if (useDepth) useDepth.value = state.depth == null ? '' : fmt(state.depth);
+      adoptClockwise();
+      update({ rebuildRows: true });
+      els.sketchNote.textContent = 'Sketsa yang sudah disimpan untuk bidang ini. Ubah angkanya, lalu Pakai di bidang untuk memperbarui.';
+    } catch (err) { console.error('sketsa tersimpan tidak bisa dimuat', err); }
+  }
 })();

@@ -23,9 +23,13 @@ async function applySketch(ctx, res) {
     if (!rec) return { ok: false, reason: 'Survei tidak ditemukan.' };
     const out = SketsaField.applyToField(rec, ctx.field, res);
     if (!out.ok) return out;
+    // File foto dulu, lalu catatan survei: format sama dengan yang ditulis aplikasi Survei (landspace:photo:<file>)
+    if (out.photoFile) await KV.set('landspace:photo:' + out.photoFile, JSON.stringify({ id: out.photoFile, data: out.photoData }));
     await writeSurvey(rec);   // Survei dimuat ulang dari data baru
     closeSketch();
-    await openSurvey(state.sv && String(state.sv.id) === String(ctx.survey) ? state.sv : { id: ctx.survey, project: rec.name || '', code: rec.code || '', name: rec.name || '' });
+    // Sketsa hanya bisa dibuka dari menu Kalkulasi, jadi survei dibuka lagi di menu itu, bukan Ringkasan.
+    const info = state.sv && String(state.sv.id) === String(ctx.survey) ? state.sv : { id: ctx.survey, project: rec.name || '', code: rec.code || '', name: rec.name || '' };
+    await openSurvey({ ...info, section: 'measure' });
     toast('Bidang diperbarui dari sketsa: ' + String(Math.round(out.area * 100) / 100).replace('.', ',') + ' m²' + (out.depth != null ? ', kedalaman ' + String(Math.round(out.depth * 100) / 100).replace('.', ',') + ' m' : '') + (out.warning ? '. ' + out.warning : ''), { ms: out.warning ? 9000 : 4000 });
     return out;
   } catch (e) { return { ok: false, reason: 'Gagal menyimpan: ' + e.message }; }

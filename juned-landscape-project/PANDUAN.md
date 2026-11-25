@@ -80,6 +80,11 @@ Aplikasi untuk memantau proyek lanskap dari **Survei, Penawaran, RAB, Opname, sa
 **Perbaikan (versi 1.15.1)** — kedalaman dari sketsa
 - Angka bertanda minus yang ditulis di dalam bidang sketsa (mis. **-100**) dibaca sebagai kedalaman, juga tulisan seperti "kedalaman 60". Nilainya muncul di kolom *Kedalaman* pada bilah *Pakai di bidang* (satuan mengikuti satuan sketsa) dan bisa dikoreksi. Saat dipakai, kedalaman bidang diisi dalam meter sehingga volume ikut terhitung. Kolom kosong berarti kedalaman bidang tidak diubah.
 
+**Perbaikan (versi 1.15.2)** — sketsa berukuran
+- **Sketsa tersimpan.** Setelah *Pakai di bidang*, sketsa asli (angka dan sisinya) disimpan di bidang. Membuka bidang itu lagi menampilkan tombol *Buka sketsa tersimpan (gambar kerja)*, dan angkanya dimuat untuk diubah. Mengedit bentuk lewat kanvas menghapus sketsa tersimpan.
+- **Gambar kerja jadi foto bidang.** Setiap *Pakai di bidang* membuat foto gambar kerja di bidang itu, terikat ke area dan bidangnya. Menerapkan lagi menggantinya, tidak menumpuk.
+- **Tetap di menu Kalkulasi.** Setelah *Pakai di bidang*, survei kembali ke Kalkulasi, bukan Ringkasan.
+
 Tahap proyek dihitung otomatis dari data ini. Saran pengembangan ada di **SARAN-PENGEMBANGAN.md**.
 
 **Keuangan sudah dilepas sejak versi 1.4.0.** Data keuangan lama tidak dihapus: tetap ada di perangkat, ikut file cadangan, dan tetap ada di Supabase.

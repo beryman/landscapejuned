@@ -53,10 +53,23 @@
     field.points = res.points.map(p => [p[0], p[1]]);
     field.sketchScale = null;   // skala kanvas lama tidak berlaku untuk bentuk dari sketsa berukuran
     if (res.depth != null) field.depth = res.depth;   // tanpa kedalaman tertulis, kedalaman bidang tidak diubah
+    if (res.sketch) field.sketch = JSON.parse(JSON.stringify(res.sketch));   // sketsa asli, dibuka lagi dari bidang ini
     const line = 'Sketsa berukuran (' + fmt(res.area) + ' m²' + (res.depth != null ? ', kedalaman ' + fmt(res.depth) + ' m' : '') + ')' + (res.estimated ? ', ada ukuran perkiraan, periksa lagi.' : '.');
     field.note = String(field.note || '').split('\n').filter(l => !l.startsWith('Sketsa berukuran')).concat(line).filter(Boolean).join('\n');
     const warning = field.areaOverride != null ? 'Bidang ini memakai luas manual (' + fmt(field.areaOverride) + ' m²). Hapus luas manual agar luas sketsa dipakai.' : '';
-    return { ok: true, warning, area: res.area, depth: res.depth };
+    // Gambar kerja jadi foto bidang. Satu per bidang: menerapkan lagi mengganti, tidak menumpuk.
+    const out = { ok: true, warning, area: res.area, depth: res.depth };
+    if (res.photo && res.photo.dataUrl) {
+      const id = 'sk-' + field.id, area = (rec.areas || []).find(a => (a.fields || []).includes(field));
+      rec.photos = (rec.photos || []).filter(p => p.id !== id);
+      rec.photos.push({
+        id, file: id + '.png', name: 'Gambar kerja (sketsa)', areaId: area ? area.id : null, fieldId: field.id, note: '',
+        takenAt: new Date().toISOString(), adjust: {}, annotations: [], width: res.photo.width || 0, height: res.photo.height || 0, compressed: true,
+      });
+      out.photoFile = id + '.png';
+      out.photoData = res.photo.dataUrl;
+    }
+    return out;
   }
 
   root.SketsaField = { fromSolved, applyToField, depthFromNotes };
