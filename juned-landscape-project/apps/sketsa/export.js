@@ -79,7 +79,7 @@ const Export = (() => {
     return ops;
   }
 
-  function toPDF(s, { paper = 'A4', scale, unit = 'cm', title = 'Gambar kerja', date = '', note = '' }) {
+  function toPDF(s, { paper = 'A4', scale, unit = 'cm', title = 'Gambar kerja', date = '', note = '', depth = null }) {
     const [Wmm, Hmm] = PAPER[paper];
     const W = Wmm * PT, H = Hmm * PT;
     const k = (UNIT_MM[unit] / scale) * PT; // pt per drawing unit
@@ -140,6 +140,7 @@ const Export = (() => {
       title,
       `Satuan ${unit}, skala 1:${scale}, tanggal ${date}`,
       ...(s.area !== null ? [`Luas ${Geo.fmt(s.area)} ${unit}²`] : []),
+      ...(depth > 0 ? [`Kedalaman ${Geo.fmt(depth)} ${unit}`] : []),
       'Cetak 100%, jangan fit-to-page',
       ...(note ? [note] : []),
     ];

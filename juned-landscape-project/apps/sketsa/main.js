@@ -89,7 +89,7 @@
         if (!out.ok) { useMsg.textContent = out.reason; renderUse(); }
       } catch (err) { useMsg.textContent = 'Gagal menyimpan: ' + err.message; renderUse(); }
     });
-    useDepth.addEventListener('input', () => { state.depth = Geometry.parseNumber(useDepth.value); renderUse(); });
+    useDepth.addEventListener('input', () => { state.depth = Geometry.parseNumber(useDepth.value); renderUse(); renderSheet(); });
     els.settingsToggle.hidden = true; els.settings.hidden = true;   // kunci diatur di Pengaturan utama
   }
 
@@ -102,7 +102,7 @@
   function renderSheet() {
     const s = state.solved;
     const scale = currentScale();
-    els.sheet.innerHTML = Render.toSVG(s, { unit: state.unit, title: 'Gambar kerja', date: today(), scaleLabel: `1:${scale.scale}` });
+    els.sheet.innerHTML = Render.toSVG(s, { unit: state.unit, title: 'Gambar kerja', date: today(), scaleLabel: `1:${scale.scale}`, depth: state.depth });
     highlight();
   }
 
@@ -119,7 +119,7 @@
     if (s.status === 'conflict') {
       parts.push(`<div class="alert alert--conflict"><strong>Ukuran bertentangan. Betulkan angkanya sebelum ekspor.</strong><ul>${s.conflicts.map((c) => `<li>${esc(c.message)}</li>`).join('')}</ul></div>`);
     } else if (s.status === 'underdetermined') {
-      parts.push('<div class="alert alert--estimated"><strong>Ada ukuran perkiraan (~).</strong><span>Lengkapi angka yang kurang supaya gambarnya pasti.</span></div>');
+      parts.push('<div class="alert alert--estimated"><strong>Ada sisi yang ukurannya belum tertulis.</strong><span>Luas tidak dihitung dari tebakan. Isi ukuran sisi yang bertanda ?.</span></div>');
     } else {
       parts.push('<span class="chip-ok">Semua ukuran cocok</span>');
     }
@@ -129,7 +129,7 @@
   // ---------- edge table ----------
   const statusText = (st, value) => {
     if (st === 'computed') return `${Geometry.STATUS_LABEL.computed} ${value}`;
-    if (st === 'estimated') return `${Geometry.STATUS_LABEL.estimated} ~${value}`;
+    if (st === 'estimated') return 'belum tertulis';
     return Geometry.STATUS_LABEL[st] || '';
   };
 
@@ -280,7 +280,7 @@
   // Gambar kerja sebagai kanvas (dipakai ekspor PNG dan disimpan sebagai foto bidang di Survei).
   async function drawingCanvas(s, scale, note) {
     const w = 2400;
-    const svg = Render.toSVG(s, { unit: state.unit, title: 'Gambar kerja', date: today(), scaleLabel: `1:${scale}`, note, pixelWidth: w });
+    const svg = Render.toSVG(s, { unit: state.unit, title: 'Gambar kerja', date: today(), scaleLabel: `1:${scale}`, note, pixelWidth: w, depth: state.depth });
     const img = new Image();
     img.src = URL.createObjectURL(new Blob([svg], { type: 'image/svg+xml' }));
     await img.decode();
@@ -298,7 +298,7 @@
     const name = `gambar-kerja-${today()}`;
     const note = s.status === 'underdetermined' ? 'Ada ukuran perkiraan (~)' : '';
     if (kind === 'pdf') {
-      download(new Blob([Export.toPDF(s, { paper: state.paper, scale, unit: state.unit, title: 'Gambar kerja', date: today(), note })], { type: 'application/pdf' }), `${name}.pdf`);
+      download(new Blob([Export.toPDF(s, { paper: state.paper, scale, unit: state.unit, title: 'Gambar kerja', date: today(), note, depth: state.depth })], { type: 'application/pdf' }), `${name}.pdf`);
     } else if (kind === 'dxf') {
       download(new Blob([Export.toDXF(s, state.unit, note)], { type: 'application/dxf' }), `${name}.dxf`);
     } else if (kind === 'png') {
@@ -402,6 +402,7 @@
     canvas: $('#draw'), model: Drawing.createModel(), msg: $('#draw-msg'),
     pointer: null, kind: null, blocked: false, active: new Set(), raf: 0, ink: '#1c1917', reading: false,
     read: $('#draw-read'), undo: $('#draw-undo'), clear: $('#draw-clear'),
+    tool: 'pen', color: null, width: 12,
   };
   const drawCtx = draw.canvas.getContext('2d');
 
@@ -430,7 +431,8 @@
     draw.kind = ev.pointerType;
     try { draw.canvas.setPointerCapture(ev.pointerId); } catch { /* pointer already gone; the stroke still works inside the canvas */ }
     draw.msg.textContent = '';
-    draw.model.begin(toLogical(ev));
+    const hl = draw.tool === 'hl';
+    draw.model.begin(toLogical(ev), { color: draw.color, width: hl ? draw.width * 3 : draw.width, hl });
     schedule();
     ev.preventDefault();
   });
@@ -449,6 +451,24 @@
   };
   draw.canvas.addEventListener('pointerup', finish);
   draw.canvas.addEventListener('pointercancel', finish);
+  // alat gambar: pena atau stabilo, warna, tebal
+  const press = (el, on) => el.setAttribute('aria-pressed', String(on));
+  const pickColor = (c) => {
+    draw.color = c;
+    document.querySelectorAll('#draw-colors .swatch').forEach((b) => press(b, (b.dataset.color || null) === c));
+  };
+  const pickTool = (t) => {
+    draw.tool = t; press($('#tool-pen'), t === 'pen'); press($('#tool-hl'), t === 'hl');
+    if (t === 'hl' && !draw.color) pickColor('#facc15'); // stabilo hitam hanya jadi abu-abu
+  };
+  $('#tool-pen').addEventListener('click', () => pickTool('pen'));
+  $('#tool-hl').addEventListener('click', () => pickTool('hl'));
+  $('#draw-colors').addEventListener('click', (e) => { const b = e.target.closest('.swatch'); if (b) pickColor(b.dataset.color || null); });
+  $('#draw-width').addEventListener('change', (e) => { draw.width = Number(e.target.value); });
+  // jendela gambar diperbesar / dikecilkan (Esc juga menutup)
+  const zoom = (on) => { $('#draw-pane').classList.toggle('draw-full', on); press($('#draw-zoom'), on); $('#draw-zoom').textContent = on ? 'Kecilkan' : 'Perbesar'; };
+  $('#draw-zoom').addEventListener('click', () => zoom(!$('#draw-pane').classList.contains('draw-full')));
+  document.addEventListener('keydown', (e) => { if (e.key === 'Escape' && $('#draw-pane').classList.contains('draw-full')) zoom(false); });
   draw.undo.addEventListener('click', () => { draw.model.undo(); repaint(); });
   draw.clear.addEventListener('click', () => { draw.model.clear(); repaint(); });
 
@@ -460,7 +480,7 @@
     draw.msg.textContent = 'AI sedang membaca gambar.';
     try {
       const off = Object.assign(document.createElement('canvas'), { width: Drawing.WIDTH, height: Drawing.HEIGHT });
-      Drawing.paint(off.getContext('2d'), draw.model, { background: '#ffffff', ink: '#000000' }); // plain black on white reads best
+      Drawing.paint(off.getContext('2d'), draw.model, { background: '#ffffff', ink: '#000000', forRead: true }); // plain black on white reads best
       const blob = await new Promise((resolve) => off.toBlob(resolve, 'image/png'));
       const part = await toImagePart(blob);
       state.image = { part, url: `data:image/jpeg;base64,${part.data}` };

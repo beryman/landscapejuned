@@ -44,6 +44,7 @@ const Gemini = (() => {
     '- unit_hint: "mm", "cm" or "m" if a unit is written anywhere, else null.',
     '- notes: any other text you can read that does not belong to a side or corner. A number with a minus sign written inside the outline (for example -100) is the depth: copy it into notes exactly as written.',
     'If the input is a PDF, read only its first page; positions are normalised across that page.',
+    'Never assume or infer a length: a square or rectangle with only some sides written does NOT mean the other sides are equal, and a side with no number beside it must have length null. Only copy numbers that are visibly written.',
     'Gambar ini sketsa tangan. Angka yang tidak tertulis harus null, jangan ditebak.',
   ].join('\n');
 

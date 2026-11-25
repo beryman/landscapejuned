@@ -88,6 +88,14 @@ Aplikasi untuk memantau proyek lanskap dari **Survei, Penawaran, RAB, Opname, sa
 **Perbaikan (versi 1.15.3)** — Kalkulasi
 - Kolom **Area** lebih lebar (260 px). Nama area yang panjang sekarang terbaca utuh saat diketik. Lebarnya tetap bisa diubah dengan menyeret tepi kanan header.
 
+**Baru (versi 1.16.0)**
+- **Edit dan Hapus proyek langsung di kartu**, baik di Beranda maupun di daftar Proyek. Hapus meminta konfirmasi dengan menyebut nama proyek.
+- **Laporan mingguan (PDF).** Di tab *Laporan* sebuah proyek: pilih rentang tanggal (bawaan 7 hari terakhir), lalu *Buat laporan PDF*. Isinya ringkasan, kendala (termasuk tugas terlambat), laporan harian dan foto-fotonya. Di dialog cetak pilih *Simpan sebagai PDF*.
+- **Tabel Kalkulasi.** Angka tidak lagi dipotong dengan titik-titik (diperkecil agar muat), kolom Bidang dan Material lebih lebar, teks boleh dua baris dan lengkapnya muncul di tooltip. Mengetuk sel yang sudah terpilih langsung membuka isian (cocok untuk layar sentuh), dan kolom teks menerima huruf apa pun.
+- **Sketsa, mode Gambar.** Tombol *Perbesar* membuat kanvas memenuhi layar (Esc atau *Kecilkan* untuk kembali). Ada pilihan *Pena* atau *Stabilo*, enam warna, dan tebal tipis, sedang, atau tebal. Stabilo tidak ikut dibaca AI.
+- **AI tidak menebak ukuran.** Hanya angka yang tertulis di sketsa yang dipakai. Kotak dengan sisi kiri 120 dan atas 150 menjadi 150 × 120 (sisi lainnya dihitung dari bentuk tertutup, bertanda *). Sisi lain yang tidak bertulis ukuran ditandai ?, luas tidak dihitung, dan *Pakai di bidang* menolak sampai ukurannya diisi.
+- **Kedalaman di gambar kerja.** Kedalaman (misalnya -100 di dalam bidang) kini dicetak di gambar kerja (layar, PNG, foto bidang) dan di kotak judul PDF, dalam satuan gambar dan meter.
+
 Tahap proyek dihitung otomatis dari data ini. Saran pengembangan ada di **SARAN-PENGEMBANGAN.md**.
 
 **Keuangan sudah dilepas sejak versi 1.4.0.** Data keuangan lama tidak dihapus: tetap ada di perangkat, ikut file cadangan, dan tetap ada di Supabase.

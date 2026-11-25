@@ -157,3 +157,17 @@ test('no em dash in SVG or PDF text', () => {
   const txt = Buffer.from(X.toPDF(s, { paper: 'A4', scale: 10, unit: 'cm', title: 'Uji', date: 'x', note: 'Ada ukuran perkiraan' })).toString('latin1');
   assert.ok(!txt.includes('—'));
 });
+
+test('depth is printed on the working drawing, in the unit of the drawing and in metres', () => {
+  const s = fixedL();
+  const svg = R.toSVG(s, { unit: 'cm', title: 'Uji', date: 'x', depth: 100 });
+  assert.ok(svg.includes('Kedalaman = 100 cm (1 m)'));
+  assert.ok(!R.toSVG(s, { unit: 'cm', title: 'Uji', date: 'x' }).includes('Kedalaman'));
+  assert.ok(!R.toSVG(s, { unit: 'cm', title: 'Uji', date: 'x', depth: 0 }).includes('Kedalaman'));
+});
+
+test('depth is printed in the PDF title block', () => {
+  const s = fixedL();
+  const pdf = Buffer.from(X.toPDF(s, { paper: 'A4', scale: 10, unit: 'cm', title: 'Uji', date: 'x', depth: 100 })).toString('latin1');
+  assert.ok(pdf.includes('Kedalaman 100 cm'));
+});

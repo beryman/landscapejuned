@@ -60,6 +60,7 @@ test('more than 2 unknowns: estimated from sketch, status underdetermined, still
     [line(12), line(null), line(13), line(null), line(25), line(null)],
   ));
   assert.equal(s.status, 'underdetermined');
+  assert.equal(s.area, null);
   assert.ok(s.edges.some((e) => e.lengthStatus === 'estimated'));
   assert.equal(s.gap, null);
 });

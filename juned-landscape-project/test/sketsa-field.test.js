@@ -56,11 +56,20 @@ t('ukuran bertentangan: tidak ada hasil, alasannya jelas', () => {
   assert.strictEqual(r.points, undefined);
 });
 
-t('ada ukuran perkiraan: tetap bisa dipakai tetapi ditandai', () => {
+t('sisi tanpa ukuran tidak ditebak: tidak ada luas, tidak bisa dipakai', () => {
   const s = G.solve({ unit: 'cm', vertices: [v(0, 0), v(200, 0), v(200, 100), v(0, 100)], edges: [line(500), line(null), line(null), line(null)], notes: [] });
   assert.strictEqual(s.status, 'underdetermined');
+  assert.strictEqual(s.area, null);
   const r = S.fromSolved(s, 'cm');
-  assert.ok(r.ok && r.estimated === true);
+  assert.ok(!r.ok);
+  assert.match(r.reason, /belum tertulis|tidak ditebak/i);
+});
+
+t('kotak dengan sisi kiri 120 dan atas 150 menjadi 150 x 120, sisi lain dihitung bukan ditebak', () => {
+  const s = G.solve({ unit: 'cm', vertices: [v(0, 0), v(200, 0), v(200, 100), v(0, 100)], edges: [line(150), line(null), line(null), line(120)], notes: [] });
+  assert.strictEqual(s.status, 'ok');
+  assert.ok(close(s.area, 18000));
+  assert.strictEqual(s.edges[1].lengthStatus, 'computed');
 });
 
 t('sisi busur diuraikan menjadi titik; luas polygon dekat luas hasil hitungan', () => {
@@ -111,12 +120,6 @@ t('catatan bidang memuat asal sketsa dan tidak menggandakan saat diterapkan lagi
   const note = r.areas[0].fields[0].note;
   assert.ok(note.startsWith('catatan lama'));
   assert.strictEqual((note.match(/Sketsa berukuran/g) || []).length, 1);
-});
-
-t('ukuran perkiraan dicatat di bidang', () => {
-  const r = rec(); const est = { ...good(), estimated: true };
-  S.applyToField(r, 'f2', est);
-  assert.match(r.areas[0].fields[1].note, /perkiraan/i);
 });
 
 t('hasil yang tidak ok tidak pernah ditulis', () => {

@@ -18,6 +18,9 @@ async function renderHome() {
   const s = tk.summary, hasTK = tk.projects.length > 0, acts = homeActs = [];
   const act = fn => { acts.push(fn); return 'data-a="' + (acts.length - 1) + '"'; };
   const open = (id, v) => () => go('proyek', w => w.JLP.openProject(id, v));
+  // Edit dan hapus dijalankan di modul Proyek; setelah selesai atau batal kembali ke Beranda.
+  const editAct = id => () => go('proyek', w => w.JLP.editProject(id, () => setView('home')));
+  const delAct = id => () => go('proyek', w => w.JLP.deleteProject(id, () => setView('home')));
   const fresh = s && s.v === 2 && s.n === tk.projects.length;
 
   // ringkasan belum ada atau versi lama: muat modul Proyek di latar untuk menghitungnya
@@ -62,8 +65,8 @@ async function renderHome() {
     const doneN = counts[4];
     h += '<div class="sec">' + (homeStage === null ? 'Proyek berjalan' : 'Tahap ' + STAGES[homeStage]) + '</div>';
     h += shown.length ? '<div class="grid pjgrid">' + shown.map(p =>
-      '<button type="button" class="card pj" ' + act(open(p.id, p.nv)) + '><div class="top"><div><h3>' + esc(p.name) + '</h3><small>' + esc(p.client || 'Tanpa klien') + '</small></div><b>' + STAGES[p.stg] + '</b></div>' + stageTrack(p.stg) +
-      '<div class="pjm"><span>' + (p.rab ? 'RAB ' + rpc(p.rab) : p.pnv ? 'Penawaran ' + rpc(p.pnv) : 'Belum ada nilai') + '</span>' + (p.rab ? '<span>Progres ' + p.pc + '%</span>' : '') + (p.late ? '<span class="lt">' + p.late + ' tugas terlambat</span>' : '') + '</div></button>').join('') + '</div>'
+      '<div class="card pj"><button type="button" class="pjopen" ' + act(open(p.id, p.nv)) + '><div class="top"><div><h3>' + esc(p.name) + '</h3><small>' + esc(p.client || 'Tanpa klien') + '</small></div><b>' + STAGES[p.stg] + '</b></div>' + stageTrack(p.stg) +
+      '<div class="pjm"><span>' + (p.rab ? 'RAB ' + rpc(p.rab) : p.pnv ? 'Penawaran ' + rpc(p.pnv) : 'Belum ada nilai') + '</span>' + (p.rab ? '<span>Progres ' + p.pc + '%</span>' : '') + (p.late ? '<span class="lt">' + p.late + ' tugas terlambat</span>' : '') + '</div></button><div class="pjact"><button type="button" class="btn ghost sm" ' + act(editAct(p.id)) + '>Edit</button><button type="button" class="btn ghost sm" ' + act(delAct(p.id)) + '>Hapus</button></div></div>').join('') + '</div>'
       : '<div class="card empty">Tidak ada proyek di sini.</div>';
     if (homeStage === null && doneN) h += '<div class="small" style="margin-top:8px">' + doneN + ' proyek sudah selesai. Ketuk <b>Selesai</b> di atas untuk melihatnya.</div>';
   }

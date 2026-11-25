@@ -100,7 +100,9 @@ button.item:hover{border-color:var(--g3)}
 .item .go{margin-left:auto;color:var(--mut)}
 .bar{height:7px;background:#e6eadf;border-radius:7px;overflow:hidden}
 .bar i{display:block;height:100%;background:var(--g2);border-radius:7px}
-.pj{cursor:pointer;display:block;width:100%;text-align:left}
+.pj{display:block;width:100%}
+.pjopen{display:block;width:100%;text-align:left;background:none;border:0;padding:0;color:inherit;font:inherit;cursor:pointer}
+.pjact{display:flex;gap:8px;justify-content:flex-end;margin-top:10px;padding-top:8px;border-top:1px solid var(--line)}
 .pj:hover{border-color:var(--g3)}
 .pj .top{display:flex;justify-content:space-between;gap:10px;align-items:flex-start;margin-bottom:8px}
 .pj h3{font-size:15px}

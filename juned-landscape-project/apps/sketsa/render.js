@@ -10,10 +10,10 @@ const Render = (() => {
   };
   // Not colour alone: each status also carries a mark on its number.
   const mark = (status, txt) => ({
-    computed: `${txt}*`, estimated: `~${txt}`, conflict: `${txt}!`,
+    computed: `${txt}*`, estimated: '?', conflict: `${txt}!`,
   }[status] || txt);
 
-  const LEGEND = 'Tanda: 12 tertulis, 12* hasil hitungan, ~12 perkiraan, 12! bertentangan';
+  const LEGEND = 'Tanda: 12 tertulis, 12* hasil hitungan, ? belum tertulis, 12! bertentangan';
 
   const endOf = (s, i) => s.points[(i + 1) % s.points.length];
 
@@ -166,7 +166,14 @@ const Render = (() => {
   const esc = (t) => String(t).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
   const f = (n) => Math.round(n * 1000) / 1000;
 
-  function toSVG(s, { unit = 'cm', title = 'Gambar kerja', date = '', scaleLabel = '', note = '', pixelWidth = 0 } = {}) {
+  // Kedalaman (satuan gambar) dicetak di bawah perhitungan luas, juga dalam meter.
+  function depthLine(depth, unit) {
+    if (!(depth > 0)) return null;
+    const m = Math.round(depth * (TO_M2[unit] ** 0.5) * 1e4) / 1e4;
+    return `Kedalaman = ${Geo.fmt(depth)} ${unit}${unit === 'm' ? '' : ` (${String(m).replace('.', ',')} m)`}`;
+  }
+
+  function toSVG(s, { unit = 'cm', title = 'Gambar kerja', date = '', scaleLabel = '', note = '', pixelWidth = 0, depth = null } = {}) {
     const bb = bounds(s);
     const E = Math.max(bb.maxX - bb.minX, bb.maxY - bb.minY, 1);
     const h = E * 0.035, d = h * 2.6, margin = d + h * 3;
@@ -177,6 +184,7 @@ const Render = (() => {
     const breakdown = Geo.areaBreakdown(s);
     const rows = [
       ...areaLines(breakdown, unit).map((t, k) => [t, 'ink', k === 0 && t === AREA_TITLE]),
+      ...(depthLine(depth, unit) ? [[depthLine(depth, unit), 'ink', false]] : []),
       ...(note ? [[note, 'estimated', false]] : []),
     ];
     const textW = rows.length ? Math.max(...rows.map(([t]) => t.length)) * h * 0.62 + h * 2 : 0;

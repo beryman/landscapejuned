@@ -25,6 +25,7 @@
     if (!s) return no('Belum ada bentuk.');
     if (s.status === 'conflict' || (s.conflicts && s.conflicts.length)) return no('Ukuran bertentangan. Perbaiki dulu ukuran yang ditandai.');
     if (s.gap) return no('Bentuk belum menutup. Periksa ukuran sisinya.');
+    if (s.status === 'underdetermined') return no('Ada sisi yang ukurannya belum tertulis. Isi ukurannya dulu, ukuran tidak ditebak.');
     if (!s.points || s.points.length < 3 || !(s.area > 0)) return no('Bentuk belum lengkap.');
     const world = [];
     let hasArc = false;

@@ -119,4 +119,5 @@ test('pdfPart: a file that is not a PDF, or too big, is refused in plain words',
 
 test('the prompt tells Gemini to read only the first page of a PDF', () => {
   assert.ok(/first page/i.test(Gm.PROMPT));
+  assert.ok(/never assume/i.test(Gm.PROMPT));
 });

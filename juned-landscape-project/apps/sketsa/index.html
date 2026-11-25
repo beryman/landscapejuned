@@ -78,6 +78,22 @@
           <button type="button" class="btn btn--primary" id="draw-read">Baca gambar</button>
           <button type="button" class="btn btn--quiet" id="draw-undo" disabled>Urungkan</button>
           <button type="button" class="btn btn--quiet" id="draw-clear" disabled>Hapus semua</button>
+          <button type="button" class="btn btn--quiet" id="draw-zoom" aria-pressed="false">Perbesar</button>
+        </div>
+        <div class="draw-tools" role="group" aria-label="Alat gambar">
+          <button type="button" class="btn btn--quiet" id="tool-pen" aria-pressed="true">Pena</button>
+          <button type="button" class="btn btn--quiet" id="tool-hl" aria-pressed="false">Stabilo</button>
+          <span class="swatches" id="draw-colors" role="group" aria-label="Warna garis">
+            <button type="button" class="swatch" data-color="" style="--sw:#1c1917" aria-label="Hitam" aria-pressed="true"></button>
+            <button type="button" class="swatch" data-color="#b42318" style="--sw:#b42318" aria-label="Merah" aria-pressed="false"></button>
+            <button type="button" class="swatch" data-color="#1d4ed8" style="--sw:#1d4ed8" aria-label="Biru" aria-pressed="false"></button>
+            <button type="button" class="swatch" data-color="#2f7a47" style="--sw:#2f7a47" aria-label="Hijau" aria-pressed="false"></button>
+            <button type="button" class="swatch" data-color="#c2410c" style="--sw:#c2410c" aria-label="Oranye" aria-pressed="false"></button>
+            <button type="button" class="swatch" data-color="#facc15" style="--sw:#facc15" aria-label="Kuning" aria-pressed="false"></button>
+          </span>
+          <label class="draw-width">Tebal
+            <select id="draw-width"><option value="6">Tipis</option><option value="12" selected>Sedang</option><option value="22">Tebal</option></select>
+          </label>
         </div>
         <p class="form-msg draw-msg" id="draw-msg" role="status"></p>
         <p class="panel__note">Gambar bentuknya dan tulis ukuran di tiap sisi, seperti di kertas.</p>

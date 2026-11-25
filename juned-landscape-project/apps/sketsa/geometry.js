@@ -248,6 +248,7 @@ const Geometry = (() => {
     }
 
     const anyEstimated = edges.some((e) => [e.lengthStatus, e.angleStatus, e.radiusStatus].includes('estimated'));
+    if (anyEstimated) area = null;   // luas tidak dihitung dari ukuran tebakan
     const status = conflicts.length ? 'conflict' : anyEstimated ? 'underdetermined' : 'ok';
     return { points, edges, status, conflicts, cornerConflicts, gap, area, unit: input.unit ?? null, clockwiseSketch: sk };
   }
