@@ -77,6 +77,9 @@ Aplikasi untuk memantau proyek lanskap dari **Survei, Penawaran, RAB, Opname, sa
 - **Bug cadangan diperbaiki:** memulihkan cadangan tidak lagi membuang catatan penggabungan sinkron, jadi perubahan dari perangkat lain setelah pemulihan tetap digabung otomatis, bukan masuk Konflik.
 - Uji browser baru: `test/sync-scenarios.js` (perangkat baru, hapus, kunci Gemini, cadangan, keluar, ganti akun).
 
+**Perbaikan (versi 1.15.1)** — kedalaman dari sketsa
+- Angka bertanda minus yang ditulis di dalam bidang sketsa (mis. **-100**) dibaca sebagai kedalaman, juga tulisan seperti "kedalaman 60". Nilainya muncul di kolom *Kedalaman* pada bilah *Pakai di bidang* (satuan mengikuti satuan sketsa) dan bisa dikoreksi. Saat dipakai, kedalaman bidang diisi dalam meter sehingga volume ikut terhitung. Kolom kosong berarti kedalaman bidang tidak diubah.
+
 Tahap proyek dihitung otomatis dari data ini. Saran pengembangan ada di **SARAN-PENGEMBANGAN.md**.
 
 **Keuangan sudah dilepas sejak versi 1.4.0.** Data keuangan lama tidak dihapus: tetap ada di perangkat, ikut file cadangan, dan tetap ada di Supabase.

@@ -26,7 +26,7 @@ async function applySketch(ctx, res) {
     await writeSurvey(rec);   // Survei dimuat ulang dari data baru
     closeSketch();
     await openSurvey(state.sv && String(state.sv.id) === String(ctx.survey) ? state.sv : { id: ctx.survey, project: rec.name || '', code: rec.code || '', name: rec.name || '' });
-    toast('Bidang diperbarui dari sketsa: ' + String(Math.round(out.area * 100) / 100).replace('.', ',') + ' m²' + (out.warning ? '. ' + out.warning : ''), { ms: out.warning ? 9000 : 4000 });
+    toast('Bidang diperbarui dari sketsa: ' + String(Math.round(out.area * 100) / 100).replace('.', ',') + ' m²' + (out.depth != null ? ', kedalaman ' + String(Math.round(out.depth * 100) / 100).replace('.', ',') + ' m' : '') + (out.warning ? '. ' + out.warning : ''), { ms: out.warning ? 9000 : 4000 });
     return out;
   } catch (e) { return { ok: false, reason: 'Gagal menyimpan: ' + e.message }; }
 }

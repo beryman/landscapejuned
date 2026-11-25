@@ -7,8 +7,19 @@
   const no = reason => ({ ok: false, reason });
   const shoelace = pts => Math.abs(pts.reduce((s, p, i) => { const q = pts[(i + 1) % pts.length]; return s + p[0] * q[1] - q[0] * p[1]; }, 0)) / 2;
 
+  // Kedalaman yang ditulis di dalam bidang ("-100", "− 80", "kedalaman 60", "dalam: 0.4"), dalam satuan sketsa.
+  function depthFromNotes(notes) {
+    for (const n of notes || []) {
+      const s = String(n).trim();
+      const m = /^[-−–]\s*(\d+(?:[.,]\d+)?)$/.exec(s) || /\b(?:kedalaman|dalam|galian)\s*[:=]?\s*[-−–]?\s*(\d+(?:[.,]\d+)?)/i.exec(s);
+      if (m) return Number(m[1].replace(',', '.'));
+    }
+    return null;
+  }
+
   // Titik hasil sketsa: y ke atas, satuan sketsa. Survei: y ke bawah, meter, titik pertama di 0,0.
-  function fromSolved(s, unit) {
+  // depth: kedalaman dalam satuan sketsa (boleh kosong).
+  function fromSolved(s, unit, depth) {
     const k = K[unit];
     if (!k) return no('Satuan tidak dikenal. Pilih mm, cm, atau m.');
     if (!s) return no('Belum ada bentuk.');
@@ -28,7 +39,8 @@
       }
     });
     const o = world[0], points = world.map(p => [(p.x - o.x) * k + 0, -(p.y - o.y) * k + 0]);
-    return { ok: true, points, area: shoelace(points), estimated: s.status === 'underdetermined', hasArc };
+    const d = Number(depth);
+    return { ok: true, points, area: shoelace(points), depth: depth != null && d > 0 && Number.isFinite(d) ? d * k : null, estimated: s.status === 'underdetermined', hasArc };
   }
 
   // Menulis ke satu bidang pada data survei (rec = isi landspace:p:<id>). Hasil yang tidak ok tidak pernah ditulis.
@@ -40,11 +52,12 @@
     field.shape = 'polygon';
     field.points = res.points.map(p => [p[0], p[1]]);
     field.sketchScale = null;   // skala kanvas lama tidak berlaku untuk bentuk dari sketsa berukuran
-    const line = 'Sketsa berukuran (' + fmt(res.area) + ' m²)' + (res.estimated ? ', ada ukuran perkiraan, periksa lagi.' : '.');
+    if (res.depth != null) field.depth = res.depth;   // tanpa kedalaman tertulis, kedalaman bidang tidak diubah
+    const line = 'Sketsa berukuran (' + fmt(res.area) + ' m²' + (res.depth != null ? ', kedalaman ' + fmt(res.depth) + ' m' : '') + ')' + (res.estimated ? ', ada ukuran perkiraan, periksa lagi.' : '.');
     field.note = String(field.note || '').split('\n').filter(l => !l.startsWith('Sketsa berukuran')).concat(line).filter(Boolean).join('\n');
     const warning = field.areaOverride != null ? 'Bidang ini memakai luas manual (' + fmt(field.areaOverride) + ' m²). Hapus luas manual agar luas sketsa dipakai.' : '';
-    return { ok: true, warning, area: res.area };
+    return { ok: true, warning, area: res.area, depth: res.depth };
   }
 
-  root.SketsaField = { fromSolved, applyToField };
+  root.SketsaField = { fromSolved, applyToField, depthFromNotes };
 })(typeof window !== 'undefined' ? window : globalThis);

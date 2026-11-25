@@ -141,4 +141,35 @@ t('bidang dengan luas manual: bentuk diterapkan, peringatan dikembalikan, luas m
   assert.deepStrictEqual([r.areas[0].fields[0].areaOverride, r.areas[0].fields[0].overrideReason], [7, 'ukur ulang']);
 });
 
+// ---------- kedalaman tertulis di dalam bidang (mis. "-100") ----------
+t('kedalaman dari catatan: angka bertanda minus atau kata kedalaman, dalam satuan sketsa', () => {
+  assert.strictEqual(S.depthFromNotes(['-100']), 100);
+  assert.strictEqual(S.depthFromNotes(['− 80']), 80);
+  assert.strictEqual(S.depthFromNotes(['-1,5']), 1.5);
+  assert.strictEqual(S.depthFromNotes(['kedalaman 60']), 60);
+  assert.strictEqual(S.depthFromNotes(['dalam: 0.4']), 0.4);
+  assert.strictEqual(S.depthFromNotes(['skala bebas', '-100']), 100);
+  assert.strictEqual(S.depthFromNotes(['skala bebas']), null);
+  assert.strictEqual(S.depthFromNotes(['2024-11-25']), null, 'tanggal bukan kedalaman');
+  assert.strictEqual(S.depthFromNotes(undefined), null);
+});
+
+t('kedalaman dikonversi ke meter sesuai satuan sketsa', () => {
+  const r = S.fromSolved(G.solve(rect(260, 150, 'cm')), 'cm', 100);
+  assert.ok(r.ok && close(r.depth, 1));
+  assert.ok(close(S.fromSolved(G.solve(rect(2600, 1500, 'mm')), 'mm', 400).depth, 0.4));
+  assert.strictEqual(S.fromSolved(G.solve(rect(260, 150, 'cm')), 'cm', null).depth, null);
+  assert.strictEqual(S.fromSolved(G.solve(rect(260, 150, 'cm')), 'cm', -5).depth, null, 'nilai tidak masuk akal diabaikan');
+});
+
+t('kedalaman ditulis ke bidang dan dicatat; tanpa kedalaman, kedalaman lama tidak diubah', () => {
+  const r = rec();
+  S.applyToField(r, 'f1', S.fromSolved(G.solve(rect(260, 150, 'cm')), 'cm', 100));
+  assert.strictEqual(r.areas[0].fields[0].depth, 1);
+  assert.match(r.areas[0].fields[0].note, /kedalaman 1 m/);
+  const r2 = rec();
+  S.applyToField(r2, 'f1', S.fromSolved(G.solve(rect(260, 150, 'cm')), 'cm', null));
+  assert.strictEqual(r2.areas[0].fields[0].depth, 0.3);
+});
+
 console.log('sketsa-field OK');

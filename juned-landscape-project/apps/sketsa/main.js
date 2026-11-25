@@ -34,7 +34,7 @@
 
   const state = {
     sketch: structuredClone(EXAMPLE), solved: null, unit: 'cm', paper: 'A4', scale: 'auto',
-    image: null, busy: false, error: null, active: null,
+    image: null, busy: false, error: null, active: null, depth: null,
   };
 
   const els = {
@@ -62,21 +62,22 @@
   }
 
   // ---------- pakai di bidang Survei (hanya di dalam Juned Landscape) ----------
-  const use = $('#use'), useBtn = $('#use-btn'), useMsg = $('#use-msg');
+  const use = $('#use'), useBtn = $('#use-btn'), useMsg = $('#use-msg'), useDepth = $('#use-depth'), useDepthUnit = $('#use-depth-unit');
   function renderUse() {
     if (!host) return;
-    const r = SketsaField.fromSolved(state.solved, state.unit);
+    const r = SketsaField.fromSolved(state.solved, state.unit, state.depth);
+    useDepthUnit.textContent = state.unit;
     use.dataset.state = r.ok ? (r.estimated ? 'estimated' : 'ok') : 'blocked';
     useBtn.disabled = !r.ok || state.busy;
     useMsg.textContent = r.ok
-      ? `Luas ${fmt(r.area)} m²${r.estimated ? ', ada ukuran perkiraan' : ''}${r.hasArc ? ', sisi lengkung disimpan sebagai titik pendek' : ''}.`
+      ? `Luas ${fmt(r.area)} m²${r.depth != null ? `, kedalaman ${fmt(r.depth)} m` : ''}${r.estimated ? ', ada ukuran perkiraan' : ''}${r.hasArc ? ', sisi lengkung disimpan sebagai titik pendek' : ''}.`
       : r.reason;
   }
   if (host) {
     use.hidden = false;
     useBtn.textContent = host.name ? `Pakai di bidang ${host.name}` : 'Pakai di bidang';
     useBtn.addEventListener('click', async () => {
-      const r = SketsaField.fromSolved(state.solved, state.unit);   // dihitung ulang: bentuk bertentangan tidak pernah tersimpan
+      const r = SketsaField.fromSolved(state.solved, state.unit, state.depth);   // dihitung ulang: bentuk bertentangan tidak pernah tersimpan
       if (!r.ok) { useMsg.textContent = r.reason; return; }
       if (!shell || !shell.applySketch) { useMsg.textContent = 'Tidak tersambung ke aplikasi Juned Landscape. Tutup lalu buka lagi dari bidang.'; return; }
       useBtn.disabled = true; useMsg.textContent = 'Menyimpan ke bidang…';
@@ -85,6 +86,7 @@
         if (!out.ok) { useMsg.textContent = out.reason; renderUse(); }
       } catch (err) { useMsg.textContent = 'Gagal menyimpan: ' + err.message; renderUse(); }
     });
+    useDepth.addEventListener('input', () => { state.depth = Geometry.parseNumber(useDepth.value); renderUse(); });
     els.settingsToggle.hidden = true; els.settings.hidden = true;   // kunci diatur di Pengaturan utama
   }
 
@@ -341,6 +343,8 @@
     try {
       const sketch = await readWithModels(state.image.part, await aiConfig());
       state.sketch = sketch;
+      state.depth = SketsaField.depthFromNotes(sketch.notes);   // mis. "-100" ditulis di dalam bidang
+      if (useDepth) useDepth.value = state.depth == null ? '' : fmt(state.depth);
       adoptClockwise();
       if (sketch.unit) { state.unit = sketch.unit; els.unit.value = sketch.unit; }
       state.active = null;

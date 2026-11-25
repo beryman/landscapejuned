@@ -132,6 +132,8 @@ input[aria-invalid="true"] { border-color: var(--color-error); background: var(-
 .use[hidden] { display: none; }
 .use p { margin: 0; flex: 1 1 14rem; min-width: 0; overflow-wrap: break-word; }
 .use[data-state="blocked"] p { color: var(--color-error); font-weight: 500; }
+.use__depth { display: inline-flex; align-items: center; gap: var(--space-xs); flex: none; }
+.use__depth input { width: 7ch; font-variant-numeric: tabular-nums; }
 @media (max-width: 40rem) { :root { --gutter: 16px; } .use .btn { flex: 1 1 100%; } }
 
 @media (max-width: 60rem) {

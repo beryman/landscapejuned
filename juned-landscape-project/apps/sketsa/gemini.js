@@ -42,7 +42,7 @@ const Gemini = (() => {
     '- length: the number written beside that side exactly as written (decimal comma means a decimal point), or null when no number is written. Never invent or compute a number.',
     '- kind: "arc" when the side is drawn curved, else "line". radius: a number written with an R prefix near the curve, else null. bulge: "out" when the curve bows away from the inside of the shape, "in" when it bows into it.',
     '- unit_hint: "mm", "cm" or "m" if a unit is written anywhere, else null.',
-    '- notes: any other text you can read that does not belong to a side or corner.',
+    '- notes: any other text you can read that does not belong to a side or corner. A number with a minus sign written inside the outline (for example -100) is the depth: copy it into notes exactly as written.',
     'If the input is a PDF, read only its first page; positions are normalised across that page.',
     'Gambar ini sketsa tangan. Angka yang tidak tertulis harus null, jangan ditebak.',
   ].join('\n');
