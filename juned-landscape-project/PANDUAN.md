@@ -85,6 +85,9 @@ Aplikasi untuk memantau proyek lanskap dari **Survei, Penawaran, RAB, Opname, sa
 - **Gambar kerja jadi foto bidang.** Setiap *Pakai di bidang* membuat foto gambar kerja di bidang itu, terikat ke area dan bidangnya. Menerapkan lagi menggantinya, tidak menumpuk.
 - **Tetap di menu Kalkulasi.** Setelah *Pakai di bidang*, survei kembali ke Kalkulasi, bukan Ringkasan.
 
+**Perbaikan (versi 1.15.3)** — Kalkulasi
+- Kolom **Area** lebih lebar (260 px). Nama area yang panjang sekarang terbaca utuh saat diketik. Lebarnya tetap bisa diubah dengan menyeret tepi kanan header.
+
 Tahap proyek dihitung otomatis dari data ini. Saran pengembangan ada di **SARAN-PENGEMBANGAN.md**.
 
 **Keuangan sudah dilepas sejak versi 1.4.0.** Data keuangan lama tidak dihapus: tetap ada di perangkat, ikut file cadangan, dan tetap ada di Supabase.

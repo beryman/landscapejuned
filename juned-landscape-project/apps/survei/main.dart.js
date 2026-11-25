@@ -151379,7 +151379,7 @@ A.Hm.prototype={
 aA(){var s=null,r=A.iD(!0,s,!0,!0,s,s,!1),q=A.qu(s,0,s,s),p=A.qu(s,0,s,s)
 return new A.AK(r,q,p,new A.f7(B.qM,$.ad()),A.iD(!0,s,!0,!0,s,s,!1))}}
 A.AK.prototype={
-Qd(a){var s,r,q,p,o=null,n=A.b([new A.ef("area","Area",170,B.hd,o),new A.ef("name","Bidang",110,B.hd,o),new A.ef("shape","Bentuk",120,B.a_I,o),new A.ef("sign","\xb1",44,B.hd,o),new A.ef("d1","Panjang / Alas / R",140,B.ip,o),new A.ef("d2","Lebar / Tinggi",98,B.ip,o),new A.ef("d3","Tinggi (trap.)",92,B.ip,o),new A.ef("luas","Luas (m\xb2)",98,B.ip,o),new A.ef("depth","Kedalaman (m)",104,B.ip,o),new A.ef("volume","Volume (m\xb3)",98,B.a_I,o)],t.Xx)
+Qd(a){var s,r,q,p,o=null,n=A.b([new A.ef("area","Area",260,B.hd,o),new A.ef("name","Bidang",110,B.hd,o),new A.ef("shape","Bentuk",120,B.a_I,o),new A.ef("sign","\xb1",44,B.hd,o),new A.ef("d1","Panjang / Alas / R",140,B.ip,o),new A.ef("d2","Lebar / Tinggi",98,B.ip,o),new A.ef("d3","Tinggi (trap.)",92,B.ip,o),new A.ef("luas","Luas (m\xb2)",98,B.ip,o),new A.ef("depth","Kedalaman (m)",104,B.ip,o),new A.ef("volume","Volume (m\xb3)",98,B.a_I,o)],t.Xx)
 for(s=a.gGA(),r=s.length,q=0;q<s.length;s.length===r||(0,A.k)(s),++q){p=s[q]
 n.push(new A.ef("m:"+p.a,p.b+" ("+p.c+")",118,B.ip,p))}n.push(new A.ef("note","Keterangan",200,B.hd,o))
 return n},
